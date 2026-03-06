@@ -30,6 +30,19 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 
+  if (action === "syncPdfUrls") {
+    const pw = (e.parameter && e.parameter.pw) || "";
+    if (pw !== ADMIN_PASSWORD) {
+      return ContentService
+        .createTextOutput(JSON.stringify({ success: false, message: "비밀번호가 올바르지 않습니다." }))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    const result = syncPdfUrls_();
+    return ContentService
+      .createTextOutput(JSON.stringify(result))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
   return ContentService
     .createTextOutput(JSON.stringify({ error: "action 파라미터가 필요합니다. (?action=data)" }))
     .setMimeType(ContentService.MimeType.JSON);
@@ -184,6 +197,53 @@ function loadFromSheet() {
   }
 
   return { rows, amendments, regMeta };
+}
+
+// ================================================================
+//  Drive PDF URL 자동 매핑 (관리자용)
+// ================================================================
+function syncPdfUrls_() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const regSheet = ss.getSheetByName("regulations");
+    if (!regSheet) return { success: false, message: "regulations 시트 없음" };
+
+    const data = regSheet.getDataRange().getValues();
+    if (data.length < 2) return { success: false, message: "regulations 데이터 없음" };
+
+    const headers = data[0].map(h => String(h).toLowerCase().trim());
+    const iName   = headers.indexOf("reg_name");
+    const iPdf    = headers.indexOf("pdf_url");
+    if (iName < 0 || iPdf < 0) return { success: false, message: "reg_name 또는 pdf_url 컬럼 없음" };
+
+    // Drive 전체 검색: 이름에 규정명 포함, PDF 파일
+    let updated = 0;
+    for (let i = 1; i < data.length; i++) {
+      const regName = String(data[i][iName] || "").trim();
+      if (!regName) continue;
+      if (data[i][iPdf]) continue; // 이미 URL 있음
+
+      const files = DriveApp.searchFiles(
+        'mimeType="application/pdf" and title contains "' + regName.replace(/"/g, "") + '" and trashed=false'
+      );
+      if (files.hasNext()) {
+        const file = files.next();
+        file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+        const url = "https://drive.google.com/file/d/" + file.getId() + "/view";
+        regSheet.getRange(i + 1, iPdf + 1).setValue(url);
+        updated++;
+      }
+    }
+
+    // 캐시 갱신 필요
+    const cache = CacheService.getScriptCache();
+    cache.remove("regulation_meta");
+    cache.remove(CACHE_KEY_REG);
+
+    return { success: true, message: "PDF 링크 " + updated + "건 매핑 완료. 캐시도 초기화했습니다." };
+  } catch(e) {
+    return { success: false, message: "오류: " + e.message };
+  }
 }
 
 // ================================================================

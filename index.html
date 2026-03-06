@@ -368,7 +368,11 @@ function initData() {
       document.getElementById("initOverlay").classList.add("hidden");
     })
     .catch(err => {
-      document.getElementById("initMsg").textContent = "데이터 로드 실패: " + err.message;
+      const overlay = document.getElementById("initOverlay");
+      overlay.querySelector(".spinner").style.display = "none";
+      const msg = document.getElementById("initMsg");
+      msg.innerHTML = "데이터 로드 실패: " + escHtml(err.message)
+        + '<br><button onclick="location.reload()" style="margin-top:12px;padding:6px 16px;border:1px solid #1B3A5C;border-radius:6px;background:#1B3A5C;color:#fff;cursor:pointer;font-size:0.82rem;">새로고침</button>';
     });
 }
 
@@ -535,8 +539,8 @@ function openFullPage(regulationName) {
     meta 
   }));
 
-  // 현재 창 이동 방식으로 변경함
-  location.href = SCRIPT_URL + "?page=full";
+  // GitHub Pages의 full.html로 이동
+  location.href = "full.html";
 }
 
 // ── 관리자 모달 ──────────────────────────────────────────────
