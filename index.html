@@ -319,9 +319,9 @@
 </div>
 
 <script>
+const SPREADSHEET_ID = "1zlIPKBVaYzB-qp00u6xiKD6zOyDDNgAv267YQi-uuBU";
 let ALL_ROWS       = [];
 let ALL_AMENDMENTS = [];
-let SCRIPT_URL     = "https://script.google.com/macros/s/AKfycbx5Sqkb3yN1yPqmjSLv_9JIFUuyEvEqVA0Lw6s4OlLwUwtmRj1zMz7NXAautTuzngbg/exec";
 let REG_META_MAP   = {};
 
 // ── 유틸 ─────────────────────────────────────────────────────
@@ -353,28 +353,123 @@ function amendLabel(name) {
   return (m.lastAmendType ? m.lastAmendType + " " : "") + m.lastAmendDate;
 }
 
+// ── gviz/tq 시트 읽기 유틸 ───────────────────────────────────
+function fetchSheet(sheetName) {
+  const url = "https://docs.google.com/spreadsheets/d/" + SPREADSHEET_ID
+    + "/gviz/tq?tqx=out:json&sheet=" + encodeURIComponent(sheetName);
+  return fetch(url)
+    .then(r => r.text())
+    .then(text => {
+      const json = JSON.parse(text.replace(/^[^(]+\(/, "").replace(/\);?\s*$/, ""));
+      const cols = json.table.cols.map(c => (c.label || c.id || "").toLowerCase().trim());
+      return (json.table.rows || []).map(row => {
+        const obj = {};
+        cols.forEach((col, i) => {
+          const cell = row.c && row.c[i];
+          obj[col] = (cell && cell.v !== null && cell.v !== undefined) ? cell.v : "";
+        });
+        return obj;
+      });
+    });
+}
+
+function safeArticleNo(val) {
+  if (val instanceof Date) return (val.getMonth()+1) + "-" + val.getDate();
+  if (typeof val === "string" && val.match(/^Date\((\d+),(\d+),(\d+)\)$/)) {
+    const m = val.match(/^Date\((\d+),(\d+),(\d+)\)$/);
+    return (parseInt(m[2])+1) + "-" + m[3];
+  }
+  return String(val || "").trim();
+}
+
+function formatDateVal(v) {
+  if (!v) return "";
+  if (typeof v === "string" && v.match(/^Date\((\d+),(\d+),(\d+)\)$/)) {
+    const m = v.match(/^Date\((\d+),(\d+),(\d+)\)$/);
+    const y=m[1], mo=String(parseInt(m[2])+1).padStart(2,"0"), d=String(m[3]).padStart(2,"0");
+    return y+"."+mo+"."+d+".";
+  }
+  return String(v);
+}
+
 // ── 초기 데이터 로드 ─────────────────────────────────────────
 function initData() {
-  google.script.run
-    .withSuccessHandler(function(data) {
-      ALL_ROWS       = data.rows       || [];
-      ALL_AMENDMENTS = data.amendments || [];
-      REG_META_MAP   = data.regMeta    || {};
-
+  const cached = sessionStorage.getItem("regData_" + SPREADSHEET_ID);
+  if (cached) {
+    try {
+      const data = JSON.parse(cached);
+      ALL_ROWS = data.rows; ALL_AMENDMENTS = data.amendments; REG_META_MAP = data.regMeta;
       document.getElementById("kw").disabled = false;
       document.getElementById("searchBtn").disabled = false;
       document.getElementById("kw").focus();
       document.getElementById("initOverlay").classList.add("hidden");
-    })
-    .withFailureHandler(function(err) {
-      document.getElementById("initMsg").textContent =
-        "데이터 로드 실패: " + err.message;
-    })
-    .getAllData();
+      return;
+    } catch(e) { sessionStorage.removeItem("regData_" + SPREADSHEET_ID); }
+  }
 
-  google.script.run
-    .withSuccessHandler(function(url) { SCRIPT_URL = url; })
-    .getScriptUrl();
+  Promise.all([
+    fetchSheet("regulations"),
+    fetchSheet("article"),
+    fetchSheet("history")
+  ]).then(([regRows, artRows, histRows]) => {
+    // regulations
+    const regIdToName = {};
+    REG_META_MAP = {};
+    regRows.forEach(r => {
+      const id = String(r["reg_id"]||"").trim();
+      const name = String(r["reg_name"]||"").trim();
+      if (!id||!name) return;
+      regIdToName[id] = name;
+      REG_META_MAP[name] = {
+        pdfUrl        : String(r["pdf_url"]||"").trim(),
+        enactDate     : formatDateVal(r["enact_date"]),
+        lastAmendDate : formatDateVal(r["last_amend_date"]),
+        lastAmendType : String(r["last_amend_type"]||"").trim(),
+        lastEffDate   : formatDateVal(r["last_effect_date"]),
+      };
+    });
+
+    // article
+    ALL_ROWS = artRows.map(r => ({
+      regulationName : regIdToName[String(r["reg_id"]||"").trim()] || String(r["reg_id"]||"").trim(),
+      chapter        : String(r["chapter"]||"").trim(),
+      chapterTitle   : String(r["chapter_title"]||"").trim(),
+      section        : String(r["section"]||"").trim(),
+      sectionTitle   : String(r["section_title"]||"").trim(),
+      articleNo      : safeArticleNo(r["article_no"]),
+      articleTitle   : String(r["article_title"]||"").trim(),
+      paragraphNo    : r["paragraph_no"],
+      itemNo         : String(r["item_no"]||"").trim(),
+      subitemNo      : String(r["subitem_no"]||"").trim(),
+      content        : String(r["content"]||""),
+      sortKey        : String(r["sort_key"]||"").trim(),
+      revisionDates  : String(r["revision_dates"]||"").trim(),
+      changeType     : String(r["change_type"]||"").trim(),
+      changeDate     : formatDateVal(r["change_date"]),
+    }));
+
+    // history
+    ALL_AMENDMENTS = histRows.map(r => ({
+      regulationName : regIdToName[String(r["reg_id"]||"").trim()] || String(r["reg_name"]||r["reg_id"]||"").trim(),
+      seq            : Number(r["version"]) || 0,
+      amendDate      : formatDateVal(r["change_date"]),
+      amendType      : String(r["change_type"]||""),
+      effectDate     : "",
+      content        : String(r["content"]||""),
+    }));
+
+    try {
+      sessionStorage.setItem("regData_" + SPREADSHEET_ID,
+        JSON.stringify({ rows: ALL_ROWS, amendments: ALL_AMENDMENTS, regMeta: REG_META_MAP }));
+    } catch(e) {}
+
+    document.getElementById("kw").disabled = false;
+    document.getElementById("searchBtn").disabled = false;
+    document.getElementById("kw").focus();
+    document.getElementById("initOverlay").classList.add("hidden");
+  }).catch(err => {
+    document.getElementById("initMsg").textContent = "데이터 로드 실패: " + err.message;
+  });
 }
 
 // ── 브라우저 내 검색 ─────────────────────────────────────────
@@ -540,8 +635,7 @@ function openFullPage(regulationName) {
     meta 
   }));
 
-  // 현재 창 이동 방식으로 변경함
-  location.href = SCRIPT_URL + "?page=full";
+  location.href = "full.html";
 }
 
 // ── 관리자 모달 ──────────────────────────────────────────────
@@ -558,67 +652,36 @@ function closeAdminModal() {
   document.getElementById("adminModal").classList.remove("show");
 }
 
+const ADMIN_PASSWORD = "admin12345";
+
 function confirmClear() {
   const pw  = document.getElementById("adminPw").value;
   const btn = document.getElementById("confirmBtn");
   const msg = document.getElementById("modalMsg");
 
   if (!pw) { msg.textContent = "비밀번호를 입력해주세요."; msg.className = "modal-msg err"; return; }
+  if (pw !== ADMIN_PASSWORD) { msg.textContent = "비밀번호가 올바르지 않습니다."; msg.className = "modal-msg err"; return; }
 
+  sessionStorage.removeItem("regData_" + SPREADSHEET_ID);
+  msg.textContent = "캐시 초기화 완료."; msg.className = "modal-msg ok";
   btn.disabled = true;
-  msg.textContent = "초기화 중…";
-  msg.className = "modal-msg";
 
-  google.script.run
-    .withSuccessHandler(function(result) {
-      btn.disabled = false;
-      msg.textContent = result.message;
-      msg.className = "modal-msg " + (result.success ? "ok" : "err");
-
-      if (result.success) {
-        // 캐시 초기화 성공 → 브라우저 데이터도 갱신
-        setTimeout(function() {
-          closeAdminModal();
-          document.getElementById("initOverlay").classList.remove("hidden");
-          document.getElementById("initMsg").textContent = "최신 데이터를 불러오는 중입니다…";
-          document.getElementById("kw").disabled = true;
-          document.getElementById("searchBtn").disabled = true;
-          ALL_ROWS = []; ALL_AMENDMENTS = []; REG_META_MAP = {};
-          initData();
-        }, 1200);
-      }
-    })
-    .withFailureHandler(function(err) {
-      btn.disabled = false;
-      msg.textContent = "오류: " + err.message;
-      msg.className = "modal-msg err";
-    })
-    .clearCacheWithPassword(pw);
+  setTimeout(function() {
+    closeAdminModal();
+    document.getElementById("initOverlay").classList.remove("hidden");
+    document.getElementById("initMsg").textContent = "최신 데이터를 불러오는 중입니다…";
+    document.getElementById("kw").disabled = true;
+    document.getElementById("searchBtn").disabled = true;
+    ALL_ROWS = []; ALL_AMENDMENTS = []; REG_META_MAP = {};
+    btn.disabled = false;
+    initData();
+  }, 800);
 }
 
 function confirmSyncPdf() {
-  const pw  = document.getElementById("adminPw").value;
   const msg = document.getElementById("modalMsg");
-  const btn = document.getElementById("syncPdfBtn");
-
-  if (!pw) { msg.textContent = "비밀번호를 입력해주세요."; msg.className = "modal-msg err"; return; }
-
-  btn.disabled = true;
-  msg.textContent = "Drive 스캔 중…";
-  msg.className = "modal-msg";
-
-  google.script.run
-    .withSuccessHandler(function(result) {
-      btn.disabled = false;
-      msg.textContent = result.message;
-      msg.className = "modal-msg " + (result.success ? "ok" : "err");
-    })
-    .withFailureHandler(function(err) {
-      btn.disabled = false;
-      msg.textContent = "오류: " + err.message;
-      msg.className = "modal-msg err";
-    })
-    .syncPdfUrls(pw);
+  msg.textContent = "PDF 링크 매핑은 Google Sheets에서 직접 관리하세요.";
+  msg.className = "modal-msg err";
 }
 
 // 모달 외부 클릭 시 닫기

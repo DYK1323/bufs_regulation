@@ -169,7 +169,7 @@
 <body>
 <div id="app">
   <nav class="toc">
-    <button class="back-btn" onclick="window.top.location.href='https://script.google.com/macros/s/AKfycbx5Sqkb3yN1yPqmjSLv_9JIFUuyEvEqVA0Lw6s4OlLwUwtmRj1zMz7NXAautTuzngbg/exec'; return false;">
+    <button class="back-btn" onclick="window.location.href='index.html'; return false;">
       <span class="back-btn-icon">←</span><span>홈 화면으로 돌아가기</span>
     </button>
   <div class="toc-header"><div class="skeleton-line" style="width:70%"></div></div>
@@ -258,7 +258,7 @@ function buildToc(regulationName, articleOrder, articleMap) {
   });
 
   // 돌아가기 버튼 HTML 삽입 (현재 창에서 열 때 가장 잘 작동함)
-let h = '<button class="back-btn" onclick="window.top.location.href=\'https://script.google.com/macros/s/AKfycbx5Sqkb3yN1yPqmjSLv_9JIFUuyEvEqVA0Lw6s4OlLwUwtmRj1zMz7NXAautTuzngbg/exec\';">'
+let h = '<button class="back-btn" onclick="window.location.href=\'index.html\';">'
       + '<span class="back-btn-icon">←</span>'
       + '<span>홈 화면으로 돌아가기</span>'
       + '</button>';
