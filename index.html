@@ -319,7 +319,7 @@
 </div>
 
 <script>
-const SPREADSHEET_ID = "1zlIPKBVaYzB-qp00u6xiKD6zOyDDNgAv267YQi-uuBU";
+const SPREADSHEET_ID = "1kEmnMb_SPPtDMWTiZ-f-SvHuixu04u9G-u4xz7GZWws";
 let ALL_ROWS       = [];
 let ALL_AMENDMENTS = [];
 let REG_META_MAP   = {};
@@ -379,7 +379,8 @@ function parseCSV(text) {
 // ── gviz CSV 시트 읽기 유틸 ──────────────────────────────────
 function fetchSheet(sheetName) {
   const url = "https://docs.google.com/spreadsheets/d/" + SPREADSHEET_ID
-    + "/gviz/tq?tqx=out:csv&sheet=" + encodeURIComponent(sheetName);
+    + "/gviz/tq?tqx=out:csv&sheet=" + encodeURIComponent(sheetName)
+    + "&t=" + Date.now();
   return fetch(url)
     .then(r => r.text())
     .then(text => {
