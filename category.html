@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>규정 목록</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --primary:   #1B3A5C;
+    --primary-l: #2C5F8A;
+    --primary-p: #EDF2F7;
+    --ink:       #1A1A1A;
+    --ink-soft:  #4B5563;
+    --ink-muted: #6B7280;
+    --paper:     #FAFAF8;
+    --card:      #FFFFFF;
+    --accent:    #D4894A;
+    --border:    #E5E7EB;
+    --sidebar-w: 220px;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--paper); color: var(--ink);
+    font-family: "Pretendard Variable", -apple-system, sans-serif;
+    font-size: 14px; line-height: 1.7;
+  }
+
+  /* ── 사이드바 ── */
+  .sidebar {
+    position: fixed; left: 0; top: 0; width: var(--sidebar-w); height: 100vh;
+    overflow-y: auto; background: var(--card); border-right: 1px solid var(--border);
+    z-index: 100; padding: 24px 12px;
+    display: flex; flex-direction: column;
+  }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .sidebar-logo {
+    padding: 0 8px 20px; border-bottom: 1px solid var(--border); margin-bottom: 16px;
+  }
+  .sidebar-logo a {
+    font-size: 0.72rem; font-weight: 700; color: var(--ink-muted);
+    letter-spacing: 0.05em; text-decoration: none; text-transform: uppercase;
+    display: block; margin-bottom: 4px;
+  }
+  .sidebar-logo a:hover { color: var(--primary); }
+  .sidebar-title { font-size: 0.92rem; font-weight: 800; color: var(--primary); line-height: 1.4; }
+
+  .sidebar-nav { flex: 1; }
+  .nav-cat {
+    display: block; padding: 8px 12px; border-radius: 6px;
+    font-size: 0.85rem; font-weight: 700; color: var(--ink-soft);
+    text-decoration: none; transition: all 0.15s; cursor: pointer;
+    margin-bottom: 2px;
+  }
+  .nav-cat:hover { background: var(--primary-p); color: var(--primary); }
+  .nav-cat.active { background: var(--primary); color: #fff; }
+
+  .nav-sub {
+    display: block; padding: 5px 12px 5px 24px; border-radius: 6px;
+    font-size: 0.8rem; font-weight: 500; color: var(--ink-muted);
+    text-decoration: none; transition: all 0.15s; cursor: pointer;
+    margin-bottom: 1px;
+  }
+  .nav-sub:hover { background: var(--primary-p); color: var(--primary); }
+  .nav-sub.active { color: var(--primary); font-weight: 700; background: var(--primary-p); }
+
+  /* ── 본문 ── */
+  .content-area { margin-left: var(--sidebar-w); min-height: 100vh; }
+  .page-wrap { max-width: 860px; margin: 0 auto; padding: 48px 40px 100px; }
+
+  /* ── 페이지 타이틀 ── */
+  .page-title {
+    font-size: 1.6rem; font-weight: 800; color: var(--primary);
+    margin-bottom: 4px;
+  }
+  .page-subtitle {
+    font-size: 0.82rem; color: var(--ink-muted); margin-bottom: 32px;
+  }
+
+  /* ── 하위 분류 탭 (학사규정용) ── */
+  .sub-tabs {
+    display: flex; gap: 0; border-bottom: 2px solid var(--border);
+    margin-bottom: 28px; overflow-x: auto; flex-wrap: nowrap;
+  }
+  .sub-tab {
+    padding: 8px 16px; font-size: 0.82rem; font-weight: 600;
+    color: var(--ink-muted); cursor: pointer; white-space: nowrap;
+    border-bottom: 2px solid transparent; margin-bottom: -2px;
+    transition: all 0.15s; background: none; border-top: none;
+    border-left: none; border-right: none; font-family: inherit;
+  }
+  .sub-tab:hover { color: var(--primary); }
+  .sub-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+  /* ── 규정 테이블 ── */
+  .reg-table-wrap {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden;
+  }
+  .reg-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  .reg-table thead tr { background: var(--primary-p); }
+  .reg-table thead th {
+    padding: 11px 16px; text-align: left;
+    font-weight: 700; font-size: 0.8rem; color: var(--primary);
+    letter-spacing: 0.02em; white-space: nowrap;
+  }
+  .reg-table tbody tr {
+    border-top: 1px solid var(--border);
+    cursor: pointer; transition: background 0.1s;
+  }
+  .reg-table tbody tr:first-child { border-top: none; }
+  .reg-table tbody tr:hover { background: #f5f8fc; }
+  .reg-table tbody td { padding: 13px 16px; vertical-align: middle; }
+
+  .td-name { font-weight: 700; color: var(--primary-l); }
+  .td-date { color: var(--ink-muted); white-space: nowrap; font-size: 0.82rem; }
+  .td-dept { color: var(--ink-soft); font-size: 0.82rem; }
+  .td-status { white-space: nowrap; }
+  .badge {
+    display: inline-block; padding: 2px 8px; border-radius: 20px;
+    font-size: 0.72rem; font-weight: 700;
+  }
+  .badge-active { background: #d1fae5; color: #065f46; }
+  .badge-inactive { background: #f3f4f6; color: #6b7280; }
+
+  .no-result {
+    text-align: center; padding: 60px 0; color: var(--ink-muted);
+    font-size: 0.9rem;
+  }
+
+  /* ── 반응형 ── */
+  @media (max-width: 680px) {
+    :root { --sidebar-w: 0px; }
+    .sidebar { display: none; }
+    .content-area { margin-left: 0; }
+    .page-wrap { padding: 24px 16px 60px; }
+    .td-dept, .td-status { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 사이드바 -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <a href="./">← 검색으로 돌아가기</a>
+    <div class="sidebar-title">부산외국어대학교<br>규정 검색 시스템</div>
+  </div>
+  <nav class="sidebar-nav" id="sidebarNav"></nav>
+</aside>
+
+<!-- 본문 -->
+<div class="content-area">
+  <div class="page-wrap">
+    <div class="page-title" id="pageTitle">규정 목록</div>
+    <div class="page-subtitle" id="pageSubtitle"></div>
+    <div id="subTabs"></div>
+    <div id="regTableWrap"></div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  카테고리 정의 (네비 메뉴에 표시할 순서/이름)
+// ─────────────────────────────────────────────
+const CAT_LABELS = {
+  "1": "학교법인",
+  "2": "학칙",
+  "3": "위원회",
+  "4": "학사규정",
+  "5": "부속기관",
+  "6": "기타",
+};
+
+// URL 파라미터 파싱
+function getParam(key) {
+  return new URLSearchParams(location.search).get(key) || "";
+}
+
+let regList = [];
+let currentCatNo = getParam("cat");
+let currentSubNo = getParam("sub");
+
+// ─────────────────────────────────────────────
+//  localStorage에서 regList 로드
+//  없으면 GAS API 호출
+// ─────────────────────────────────────────────
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx5Sqkb3yN1yPqmjSLv_9JIFUuyEvEqVA0Lw6s4OlLwUwtmRj1zMz7NXAautTuzngbg/exec";
+
+function escHtml(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+
+function init() {
+  try {
+    const stored = localStorage.getItem("regList");
+    if (stored) {
+      regList = JSON.parse(stored);
+      render();
+      return;
+    }
+  } catch(e) {}
+
+  // localStorage에 없으면 API 호출
+  document.getElementById("regTableWrap").innerHTML =
+    '<div class="no-result">데이터를 불러오는 중입니다…</div>';
+  fetch(SCRIPT_URL + "?action=data")
+    .then(r => r.json())
+    .then(data => {
+      regList = data.regList || [];
+      try { localStorage.setItem("regList", JSON.stringify(regList)); } catch(e) {}
+      render();
+    })
+    .catch(err => {
+      document.getElementById("regTableWrap").innerHTML =
+        '<div class="no-result">데이터 로드 실패: ' + escHtml(err.message) + '</div>';
+    });
+}
+
+// ─────────────────────────────────────────────
+//  사이드바 렌더링
+// ─────────────────────────────────────────────
+function buildSidebar() {
+  // 사이드바: 카테고리 목록
+  let html = "";
+  Object.keys(CAT_LABELS).forEach(catNo => {
+    const label = CAT_LABELS[catNo];
+    const isActive = catNo === currentCatNo;
+
+    // cat=4(학사규정)이고 현재 선택된 경우 하위 카테고리 표시
+    if (catNo === "4" && isActive) {
+      const subList = getSubCategories("4");
+      html += '<a class="nav-cat active" onclick="navigate(\'4\', \'\')">' + escHtml(label) + '</a>';
+      subList.forEach(sub => {
+        const isSubActive = sub.no === currentSubNo;
+        html += '<a class="nav-sub' + (isSubActive ? ' active' : '') + '" onclick="navigate(\'4\', \'' + escHtml(sub.no) + '\')">'
+          + escHtml(sub.name) + '</a>';
+      });
+    } else {
+      html += '<a class="nav-cat' + (isActive && catNo !== "4" ? ' active' : (isActive ? ' active' : '')) + '" onclick="navigate(\'' + catNo + '\', \'\')">'
+        + escHtml(label) + '</a>';
+    }
+  });
+  document.getElementById("sidebarNav").innerHTML = html;
+}
+
+function getSubCategories(catNo) {
+  const subMap = {};
+  regList.filter(r => String(r.categoryNo) === catNo && r.categorySubNo && r.categorySub).forEach(r => {
+    const k = String(r.categorySubNo);
+    if (!subMap[k]) subMap[k] = r.categorySub;
+  });
+  return Object.keys(subMap).sort((a,b) => Number(a)-Number(b)).map(no => ({ no, name: subMap[no] }));
+}
+
+// ─────────────────────────────────────────────
+//  페이지 타이틀 + 서브탭 + 테이블 렌더링
+// ─────────────────────────────────────────────
+function render() {
+  buildSidebar();
+
+  const catLabel = CAT_LABELS[currentCatNo] || "규정 목록";
+
+  // 카테고리 번호로 제N장 형식 타이틀
+  const chapterNum = currentCatNo ? "제" + toKorNum(Number(currentCatNo)) + "장 " : "";
+  document.title = catLabel + " 규정 목록";
+  document.getElementById("pageTitle").textContent = chapterNum + catLabel;
+
+  // 학사규정: 서브탭
+  if (currentCatNo === "4") {
+    const subList = getSubCategories("4");
+    if (subList.length) {
+      let tabHtml = '<div class="sub-tabs">';
+      tabHtml += '<button class="sub-tab' + (!currentSubNo ? ' active' : '') + '" onclick="navigate(\'4\', \'\')">전체</button>';
+      subList.forEach(sub => {
+        const subChap = "제" + toKorNum(Number(sub.no)) + "절 " + sub.name;
+        tabHtml += '<button class="sub-tab' + (currentSubNo === sub.no ? ' active' : '') + '" onclick="navigate(\'4\', \'' + escHtml(sub.no) + '\')">'
+          + escHtml(subChap) + '</button>';
+      });
+      tabHtml += '</div>';
+      document.getElementById("subTabs").innerHTML = tabHtml;
+    } else {
+      document.getElementById("subTabs").innerHTML = "";
+    }
+  } else {
+    document.getElementById("subTabs").innerHTML = "";
+  }
+
+  // 규정 목록 필터
+  let filtered = regList.filter(r => String(r.categoryNo) === currentCatNo);
+  if (currentCatNo === "4" && currentSubNo) {
+    filtered = filtered.filter(r => String(r.categorySubNo) === currentSubNo);
+  }
+
+  // 부제목
+  if (currentCatNo === "4" && currentSubNo) {
+    const sub = getSubCategories("4").find(s => s.no === currentSubNo);
+    if (sub) {
+      document.getElementById("pageSubtitle").textContent =
+        "제" + toKorNum(Number(sub.no)) + "절 " + sub.name;
+    } else {
+      document.getElementById("pageSubtitle").textContent = "";
+    }
+  } else {
+    document.getElementById("pageSubtitle").textContent = "";
+  }
+
+  renderTable(filtered);
+}
+
+function renderTable(list) {
+  const wrap = document.getElementById("regTableWrap");
+  if (!list.length) {
+    wrap.innerHTML = '<div class="no-result">해당 분류의 규정이 없습니다.</div>';
+    return;
+  }
+
+  // revised_date 기준 가나다순
+  list = list.slice().sort((a, b) => a.regName.localeCompare(b.regName, "ko"));
+
+  let rows = list.map(r => {
+    const nameEsc = r.regName.replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+    const statusBadge = r.status === "폐지"
+      ? '<span class="badge badge-inactive">' + escHtml(r.status) + '</span>'
+      : (r.status ? '<span class="badge badge-active">' + escHtml(r.status) + '</span>' : '');
+    return '<tr onclick="openReg(\'' + nameEsc + '\')" title="' + escHtml(r.regName) + ' 전문 보기">'
+      + '<td class="td-name">' + escHtml(r.regName) + '</td>'
+      + '<td class="td-date">' + escHtml(r.revisedDate || "") + '</td>'
+      + '<td class="td-dept">' + escHtml(r.dept || "") + '</td>'
+      + '<td class="td-status">' + statusBadge + '</td>'
+      + '</tr>';
+  }).join("");
+
+  wrap.innerHTML =
+    '<div class="reg-table-wrap">'
+    + '<table class="reg-table">'
+    + '<thead><tr>'
+    + '<th>규정명</th>'
+    + '<th>개정일</th>'
+    + '<th>담당부서</th>'
+    + '<th>상태</th>'
+    + '</tr></thead>'
+    + '<tbody>' + rows + '</tbody>'
+    + '</table></div>';
+}
+
+// ─────────────────────────────────────────────
+//  네비게이션
+// ─────────────────────────────────────────────
+function navigate(catNo, subNo) {
+  currentCatNo = catNo;
+  currentSubNo = subNo || "";
+  const params = new URLSearchParams({ cat: catNo });
+  if (subNo) params.set("sub", subNo);
+  history.pushState({}, "", "?" + params.toString());
+  render();
+}
+
+window.addEventListener("popstate", function() {
+  currentCatNo = getParam("cat");
+  currentSubNo = getParam("sub");
+  render();
+});
+
+// ─────────────────────────────────────────────
+//  규정 전문 열기 (index.html과 동일 방식)
+// ─────────────────────────────────────────────
+function openReg(regName) {
+  // regList에는 행 내용이 없으므로 localStorage의 full 데이터를 index에서 가져옴
+  // 단, category 페이지에서 직접 진입 시 rows가 없을 수 있음
+  // → localStorage에 fullRegData가 있으면 사용, 없으면 targetRegulation만 설정 후 이동
+  localStorage.setItem("targetRegulation", regName);
+
+  // ALL_ROWS가 없으므로 index에 fullRegData가 있는지 확인
+  const stored = localStorage.getItem("fullRegData");
+  if (stored) {
+    try {
+      const parsed = JSON.parse(stored);
+      if (parsed.regulationName === regName) {
+        location.href = "full.html";
+        return;
+      }
+    } catch(e) {}
+  }
+
+  // rows 없이 이동 → full.html이 targetRegulation을 보고 API 호출하도록 처리
+  // full.html이 현재 localStorage rows 방식이므로: index.html을 통해 우회하거나
+  // 여기서 직접 API fetch 후 저장
+  document.getElementById("regTableWrap").insertAdjacentHTML("beforebegin",
+    '<div style="text-align:center;padding:20px;color:var(--ink-muted);font-size:0.85rem">규정 데이터 로드 중…</div>');
+
+  fetch(SCRIPT_URL + "?action=data")
+    .then(r => r.json())
+    .then(data => {
+      const allRows = data.rows || [];
+      const amendments = (data.amendments || []).filter(a => a.regulationName === regName).sort((a,b) => a.seq - b.seq);
+      const meta = (data.regMeta || {})[regName] || {};
+      const regRows = allRows.filter(r => r.regulationName === regName);
+      localStorage.setItem("fullRegData", JSON.stringify({
+        regulationName: regName, rows: regRows, amendments, pdfUrl: meta.pdfUrl || "", meta
+      }));
+      localStorage.setItem("regList", JSON.stringify(data.regList || []));
+      location.href = "full.html";
+    })
+    .catch(err => {
+      alert("데이터 로드 실패: " + err.message);
+    });
+}
+
+// ─────────────────────────────────────────────
+//  한글 숫자 변환 (1→일, 2→이 …)
+// ─────────────────────────────────────────────
+function toKorNum(n) {
+  const UNITS = ["", "일", "이", "삼", "사", "오", "육", "칠", "팔", "구", "십"];
+  if (n <= 10) return UNITS[n] || String(n);
+  if (n < 20) return "십" + (UNITS[n - 10] || "");
+  return String(n);
+}
+
+init();
+</script>
+</body>
+</html>

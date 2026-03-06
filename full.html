@@ -336,7 +336,7 @@ function renderFull(data) {
 
     const ART_LEVEL_TYPES = ["본조신설", "전부개정"];
     const artLevelRow = art.rows.find(r => ART_LEVEL_TYPES.indexOf(r.changeType || "") >= 0);
-    const artLevelAnno = artLevelRow ? '<div class="art-revision">(' + escHtml(artLevelRow.changeType) + ' ' + escHtml(artLevelRow.changeDate) + ')</div>' : '';
+    const artLevelAnno = artLevelRow ? '<div class="art-revision">[' + escHtml(artLevelRow.changeType) + ' ' + escHtml(artLevelRow.changeDate) + ']</div>' : '';
 
     let lines = "";
     art.rows.forEach(r => {

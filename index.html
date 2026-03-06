@@ -242,6 +242,43 @@
   .modal-msg.ok  { color: var(--success); }
   .modal-msg.err { color: var(--danger); }
 
+  /* 네비게이션 */
+  .site-nav {
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 32px;
+    display: flex; gap: 0; overflow-x: auto;
+  }
+  .site-nav a {
+    display: inline-block; padding: 10px 18px;
+    font-size: 0.85rem; font-weight: 600; color: var(--ink-soft);
+    text-decoration: none; white-space: nowrap;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .site-nav a:hover { color: var(--primary); border-bottom-color: var(--primary-l); }
+
+  /* 최근 개정 목록 */
+  .recent-section { margin-bottom: 40px; }
+  .recent-title {
+    font-size: 0.8rem; font-weight: 700; color: var(--ink-muted);
+    letter-spacing: 0.06em; text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .recent-list {
+    display: flex; flex-direction: column; gap: 0;
+    border: 1px solid var(--border); border-radius: 10px; overflow: hidden;
+    background: var(--card);
+  }
+  .recent-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 11px 18px; border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: background 0.12s; gap: 16px;
+  }
+  .recent-item:last-child { border-bottom: none; }
+  .recent-item:hover { background: #f5f8fc; }
+  .recent-item-name { font-size: 0.88rem; font-weight: 600; color: var(--primary); }
+  .recent-item-date { font-size: 0.78rem; color: var(--ink-muted); white-space: nowrap; flex-shrink: 0; }
+
   .site-footer {
     margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border);
     font-size: 0.75rem; color: var(--ink-muted); text-align: center; font-weight: 500;
@@ -281,6 +318,15 @@
     </div>
   </header>
 
+  <nav class="site-nav" id="siteNav">
+    <a href="category.html?cat=1">학교법인</a>
+    <a href="category.html?cat=2">학칙</a>
+    <a href="category.html?cat=3">위원회</a>
+    <a href="category.html?cat=4">학사규정</a>
+    <a href="category.html?cat=5">부속기관</a>
+    <a href="category.html?cat=6">기타</a>
+  </nav>
+
   <section class="search-section">
     <label class="search-label" for="kw">키워드 입력</label>
     <div class="search-row">
@@ -292,6 +338,10 @@
   </section>
 
   <div class="status-bar" id="statusBar"></div>
+  <div id="recentSection" class="recent-section" style="display:none">
+    <div class="recent-title">최근 개정 규정</div>
+    <div class="recent-list" id="recentList"></div>
+  </div>
   <div id="results"></div>
 
   <footer class="site-footer">
@@ -319,10 +369,12 @@
 </div>
 
 <script>
-let ALL_ROWS       = [];
-let ALL_AMENDMENTS = [];
-let SCRIPT_URL     = "https://script.google.com/macros/s/AKfycbx5Sqkb3yN1yPqmjSLv_9JIFUuyEvEqVA0Lw6s4OlLwUwtmRj1zMz7NXAautTuzngbg/exec";
-let REG_META_MAP   = {};
+let ALL_ROWS         = [];
+let ALL_AMENDMENTS   = [];
+let SCRIPT_URL       = "https://script.google.com/macros/s/AKfycbx5Sqkb3yN1yPqmjSLv_9JIFUuyEvEqVA0Lw6s4OlLwUwtmRj1zMz7NXAautTuzngbg/exec";
+let REG_META_MAP     = {};
+let REG_LIST         = [];
+let RECENT_AMENDMENTS = [];
 
 // ── 유틸 ─────────────────────────────────────────────────────
 function buildArticleNo(raw) {
@@ -358,14 +410,20 @@ function initData() {
   fetch(SCRIPT_URL + "?action=data")
     .then(response => response.json())
     .then(data => {
-      ALL_ROWS       = data.rows       || [];
-      ALL_AMENDMENTS = data.amendments || [];
-      REG_META_MAP   = data.regMeta    || {};
+      ALL_ROWS          = data.rows             || [];
+      ALL_AMENDMENTS    = data.amendments       || [];
+      REG_META_MAP      = data.regMeta          || {};
+      REG_LIST          = data.regList          || [];
+      RECENT_AMENDMENTS = data.recentAmendments || [];
+
+      // localStorage에 regList 저장 (category.html에서 사용)
+      try { localStorage.setItem("regList", JSON.stringify(REG_LIST)); } catch(e) {}
 
       document.getElementById("kw").disabled = false;
       document.getElementById("searchBtn").disabled = false;
       document.getElementById("kw").focus();
       document.getElementById("initOverlay").classList.add("hidden");
+      renderRecentAmendments();
     })
     .catch(err => {
       const overlay = document.getElementById("initOverlay");
@@ -523,6 +581,21 @@ function renderResults(regMatches, articleMatches, kw) {
   }
 
   el.innerHTML = html;
+}
+
+function renderRecentAmendments() {
+  if (!RECENT_AMENDMENTS.length) return;
+  const section = document.getElementById("recentSection");
+  const list    = document.getElementById("recentList");
+  const top10   = RECENT_AMENDMENTS.slice(0, 10);
+  list.innerHTML = top10.map(item => {
+    const nameEsc = item.regulationName.replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+    return '<div class="recent-item" onclick="openFullPage(\'' + nameEsc + '\')">'
+      + '<span class="recent-item-name">' + escHtml(item.regulationName) + '</span>'
+      + '<span class="recent-item-date">' + escHtml(item.amendDate || "") + '</span>'
+      + '</div>';
+  }).join("");
+  section.style.display = "";
 }
 
 function openFullPage(regulationName) {
