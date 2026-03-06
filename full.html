@@ -4,182 +4,209 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>규정 전문</title>
-<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --primary:   #1B3A5C; /* 네이비 */
-    --primary-l: #2C5F8A;
-    --primary-p: #EDF2F7;
-    --ink:       #1A1A1A;
+    --navy:      #0d4a7a;
+    --navy-l:    #1a6aaa;
+    --gold:      #FDB71A;
+    --ink:       #1a1a1a;
     --ink-soft:  #4B5563;
     --ink-muted: #6B7280;
-    --paper:     #FAFAF8;
-    --card:      #FFFFFF;
-    --accent:    #D4894A; /* 골드/브라운 */
-    --border:    #E5E7EB;
-    --toc-w:     280px;
+    --paper:     #ffffff;
+    --muted:     #f1f3f5;
+    --card:      #ffffff;
+    --border:    #e5e7eb;
+    --toc-w:     320px;
   }
   html { scroll-behavior: smooth; }
   body {
     background: var(--paper); color: var(--ink);
-    font-family: "Pretendard Variable", -apple-system, sans-serif;
-    font-size: 14px; line-height: 1.8;
+    font-family: "Pretendard Variable", "Noto Sans KR", -apple-system, sans-serif;
+    font-size: 16px; line-height: 1.8;
   }
 
-  /* ── 새로 추가된 돌아가기 버튼 스타일 ── */
-  .back-btn {
-    display: flex; 
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    margin-bottom: 50px;
-    color: var(--ink-soft);
-    text-decoration: none;
-    font-size: 0.85rem;
-    font-weight: 600;
-    transition: all 0.2s;
-    cursor: pointer;
-    border: none;
-    background: none;
-    width: 100%;
+  /* ── 헤더 ── */
+  .site-header {
+    position: sticky; top: 0; z-index: 200;
+    background: #fff; border-bottom: 1px solid var(--navy);
+    padding: 0 32px;
   }
-  .back-btn:hover { color: var(--primary); background: var(--primary-p); border-radius: 6px; }
-  .back-btn-icon { font-size: 1.1rem; }
+  .site-header-inner {
+    max-width: 100%; display: flex; align-items: center; justify-content: space-between;
+    gap: 24px; height: 64px;
+  }
+  .site-logo {
+    display: flex; align-items: center; gap: 12px;
+    font-size: 1rem; font-weight: 700; color: #404040;
+    text-decoration: none; white-space: nowrap; flex-shrink: 0;
+  }
+  .site-logo img { height: 1.5em; width: auto; }
+  .header-actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+  .back-btn {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border: 1px solid var(--border); border-radius: 6px;
+    font-size: 0.82rem; font-weight: 500; color: var(--ink-soft);
+    background: none; cursor: pointer; font-family: inherit; transition: all 0.15s; text-decoration: none;
+  }
+  .back-btn:hover { background: var(--muted); color: var(--ink); }
+  .pdf-btn-header {
+    display: none; align-items: center; gap: 6px;
+    padding: 7px 14px; border: 1px solid var(--border); border-radius: 6px;
+    font-size: 0.82rem; font-weight: 500; color: var(--ink-soft);
+    background: none; text-decoration: none; transition: all 0.15s;
+  }
+  .pdf-btn-header:hover { background: var(--muted); color: var(--ink); }
+  .print-btn-header {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border: 1px solid var(--border); border-radius: 6px;
+    font-size: 0.82rem; font-weight: 500; color: var(--ink-soft);
+    background: none; cursor: pointer; font-family: inherit; transition: all 0.15s;
+  }
+  .print-btn-header:hover { background: var(--muted); color: var(--ink); }
 
   /* ── 레이아웃 ── */
   .toc {
-    position: fixed; left: 0; top: 0; width: var(--toc-w); height: 100vh;
+    position: fixed; left: 0; top: 64px; width: var(--toc-w); height: calc(100vh - 64px);
     overflow-y: auto; background: var(--card); border-right: 1px solid var(--border);
     z-index: 100; padding: 24px 12px;
   }
   .toc::-webkit-scrollbar { width: 4px; }
   .toc::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
   .content-area { margin-left: var(--toc-w); min-height: 100vh; background: var(--paper); }
 
-  /* ── 트리 내비게이션 스타일 ── */
-  .toc-header { padding: 0 8px 20px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
-  .toc-reg-name { font-size: 1rem; font-weight: 800; color: var(--primary); line-height: 1.4; }
+  /* ── TOC 스타일 ── */
+  .toc-header { padding: 0 8px 16px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .toc-reg-name { font-size: 0.95rem; font-weight: 700; color: var(--ink); line-height: 1.4; }
 
   .toc-chap-row, .toc-sect-row {
     display: flex; align-items: flex-start; gap: 6px; padding: 6px 8px;
     border-radius: 6px; cursor: pointer; transition: background 0.1s;
   }
-  .toc-chap-row:hover, .toc-sect-row:hover { background: var(--primary-p); }
-  .toc-chap-row { margin-top: 8px; }
+  .toc-chap-row:hover, .toc-sect-row:hover { background: var(--muted); }
+  .toc-chap-row { margin-top: 6px; }
   .toc-sect-row { margin-left: 12px; }
-
   .toc-toggle {
     flex-shrink: 0; font-size: 10px; color: var(--ink-muted);
     width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;
     margin-top: 4px; cursor: pointer;
   }
-  .toc-chap-label { font-size: 0.9rem; font-weight: 700; color: var(--primary); text-decoration: none; }
-  .toc-sect-label { font-size: 0.85rem; font-weight: 600; color: var(--ink-soft); text-decoration: none; }
-
+  .toc-chap-label { font-size: 0.875rem; font-weight: 700; color: var(--ink); text-decoration: none; }
+  .toc-sect-label { font-size: 0.82rem; font-weight: 600; color: var(--ink-soft); text-decoration: none; }
   .toc-chap-body.collapsed, .toc-sect-body.collapsed { display: none; }
-
   .toc-art {
-    display: block; padding: 4px 12px 4px 16px; margin: 2px 0 2px 28px;
-    font-size: 0.82rem; color: var(--ink-muted); font-weight: 500;
+    display: block; padding: 3px 12px 3px 16px; margin: 2px 0 2px 28px;
+    font-size: 0.8rem; color: var(--ink-muted); font-weight: 400;
     text-decoration: none; border-left: 1px solid var(--border);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: all 0.1s;
   }
   .toc-sect-body .toc-art { margin-left: 40px; }
-  .toc-art:hover { color: var(--primary); border-left: 2px solid var(--accent); background: var(--primary-p); }
-  .toc-art.active { color: var(--primary); font-weight: 700; border-left: 2px solid var(--accent); background: var(--primary-p); }
+  .toc-art:hover { color: var(--navy); border-left-color: var(--gold); background: #fffbf0; }
+  .toc-art.active { color: var(--navy); font-weight: 600; border-left: 2px solid var(--gold); background: #fffbf0; }
 
-  /* ── 본문 전문 스타일 ── */
-  .page-wrap { max-width: 800px; margin: 0 auto; padding: 60px 40px 120px; }
-  .reg-title { font-size: 2.2rem; font-weight: 800; color: var(--primary); margin-bottom: 16px; text-align: center; }
-  .reg-meta { font-size: 0.85rem; color: var(--ink-muted); border-bottom: 2px solid var(--primary); padding-bottom: 20px; margin-bottom: 40px; }
+  /* ── 본문 ── */
+  .page-wrap { max-width: 800px; margin: 0 auto; padding: 48px 40px 120px; }
 
-  .chapter-header { font-size: 1.3rem; font-weight: 800; color: var(--primary); margin: 60px 0 24px; padding: 12px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); scroll-margin-top: 40px; text-align: center; }
-  .section-header { font-size: 1.1rem; font-weight: 700; color: var(--primary-l); margin: 32px 0 16px; scroll-margin-top: 40px; text-align: center; }
+  /* 규정 타이틀 블록 */
+  .reg-title-block { text-align: center; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 2px solid var(--border); }
+  .reg-category-badge {
+    display: inline-block; padding: 3px 12px; border-radius: 4px;
+    background: rgba(13,74,122,0.08); color: var(--navy);
+    font-size: 0.82rem; font-weight: 500; margin-bottom: 10px;
+  }
+  .reg-title { font-size: 1.875rem; font-weight: 700; color: var(--ink); margin-bottom: 16px; font-family: "Noto Sans KR", sans-serif; }
+  .reg-meta-row { display: flex; align-items: flex-start; justify-content: space-between; }
+  .reg-meta { font-size: 0.85rem; color: var(--ink-muted); line-height: 1.8; text-align: left; }
 
-  .article { margin-bottom: 32px; scroll-margin-top: 40px; border-bottom: 1px dashed var(--border); padding-bottom: 20px; }
-  .article-title { font-weight: 700; font-size: 1.05rem; color: var(--ink); margin-bottom: 10px; }
+  /* 장/절/조 */
+  .chapter-header {
+    font-size: 1.25rem; font-weight: 700; color: var(--ink); text-align: center;
+    margin: 48px 0 20px; padding: 12px 0; border-bottom: 1px solid var(--navy);
+    scroll-margin-top: 80px;
+  }
+  .section-header {
+    font-size: 1rem; font-weight: 700; color: var(--ink-soft); text-align: center;
+    margin: 28px 0 14px; padding-left: 16px; border-left: 4px solid rgba(13,74,122,0.4);
+    text-align: left; scroll-margin-top: 80px;
+  }
+  .article { margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border); scroll-margin-top: 80px; }
+  .article-title { font-weight: 700; font-size: 1rem; color: var(--ink); margin-bottom: 8px; }
   .article-body { font-size: 1rem; color: #374151; }
 
   .para-line { display: block; padding-left: 1.2em; text-indent: -1.2em; margin-bottom: 4px; }
   .item-line { display: block; padding-left: 2.4em; text-indent: -1.2em; margin-bottom: 2px; }
   .subitem-line { display: block; padding-left: 3.6em; text-indent: -1.2em; margin-bottom: 2px; }
 
-  .art-rev-dates { margin-top: 8px; font-size: 0.78rem; color: var(--ink-muted); font-style: italic; }
   .anno-rev { font-size: 0.78rem; color: var(--ink-muted); font-style: italic; margin-left: 2px; }
   .anno-del { font-size: 0.78rem; color: #DC2626; font-style: italic; margin-left: 2px; }
   .art-revision { display: block; margin-top: 6px; font-size: 0.78rem; color: var(--ink-muted); font-style: italic; }
 
-  /* 부칙 스타일 */
-  .amendment-section { margin-top: 80px; padding-top: 40px; border-top: 2px solid var(--primary); }
-  .amendment-section-title { font-size: 0.75rem; font-weight: 800; color: var(--ink-muted); letter-spacing: 0.2em; margin-bottom: 30px; text-transform: uppercase; text-align: center; }
-  .amendment-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 16px; }
-  .amendment-header { font-weight: 700; font-size: 1rem; color: var(--primary); margin-bottom: 8px; text-align: center; }
-  .amendment-content { font-size: 0.95rem; color: var(--ink-soft); white-space: pre-wrap; }
+  /* 부칙 */
+  .amendment-section { margin-top: 60px; padding-top: 32px; border-top: 2px solid var(--border); }
+  .amendment-section-title { font-size: 0.75rem; font-weight: 700; color: var(--ink-muted); letter-spacing: 0.15em; margin-bottom: 24px; text-transform: uppercase; text-align: center; }
+  .amendment-item { border: 1px solid var(--border); border-radius: 8px; padding: 20px 24px; margin-bottom: 12px; }
+  .amendment-header { font-weight: 700; font-size: 0.95rem; color: var(--ink); margin-bottom: 8px; text-align: center; }
+  .amendment-content { font-size: 0.9rem; color: var(--ink-soft); white-space: pre-wrap; }
 
-  /* 버튼들 */
-  .print-btn, .pdf-btn { position: fixed; bottom: 32px; border-radius: 8px; padding: 12px 24px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: all 0.2s; }
-  .print-btn { right: 32px; background: var(--primary); color: #fff; border: none; }
-  .pdf-btn { right: 150px; background: #375623; color: #fff; text-decoration: none; display: none; }
-  .print-btn:hover { background: var(--primary-l); transform: translateY(-2px); }
-
-  @media print { .toc, .print-btn, .pdf-btn { display: none !important; } .content-area { margin-left: 0; } .page-wrap { padding: 0; } }
-
-  /* 스켈레톤 애니메이션 및 스타일 추가 */
+  /* 스켈레톤 */
   .skeleton-line {
-   height: 14px; background: #eee; margin: 12px 0; border-radius: 4px;
-   background: linear-gradient(90deg, #f0f0f0 25%, #e6e6e6 50%, #f0f0f0 75%);
-   background-size: 200% 100%; animation: skeleton-loading 1.5s infinite;
+    height: 14px; border-radius: 4px; margin: 12px 0;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+    background-size: 200% 100%; animation: skeleton-loading 1.5s infinite;
   }
   .skeleton-block {
-   height: 120px; background: #f0f0f0; margin-bottom: 30px; border-radius: 12px;
-   background: linear-gradient(90deg, #f0f0f0 25%, #e6e6e6 50%, #f0f0f0 75%);
-   background-size: 200% 100%; animation: skeleton-loading 1.5s infinite;
+    height: 120px; border-radius: 8px; margin-bottom: 24px;
+    background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+    background-size: 200% 100%; animation: skeleton-loading 1.5s infinite;
   }
   @keyframes skeleton-loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 
-  /* 본문 표 스타일 추가 */
-.article-body table{
-  border-collapse:collapse;
-  width:100%;
-  margin:14px 0;
-  font-size:0.9rem;
-}
+  /* 본문 표 */
+  .article-body table { border-collapse: collapse; width: 100%; margin: 14px 0; font-size: 0.9rem; }
+  .article-body th, .article-body td { border: 1px solid #e5e7eb; padding: 4px 8px; text-align: center; line-height: 1.4; }
+  .article-body th { background: #f8fafc; font-weight: 700; color: #374151; }
+  .article-body tr:nth-child(even) { background: #fafafa; }
 
-.article-body th,
-.article-body td{
-  border:1px solid #e5e7eb;
-  padding:4px 8px;
-  text-align:center;
-  line-height:1.4;
-}
-
-.article-body th{
-  background:#f8fafc;
-  font-weight:700;
-  color:#374151;
-}
-
-.article-body tr:nth-child(even){
-  background:#fafafa;
-}
-
-.article-body tr:hover{
-  background:#f1f5f9;
-}
-
+  /* 인쇄 */
+  .print-btn, .pdf-btn { display: none; }
+  @media print {
+    .site-header, .toc, .print-btn, .pdf-btn { display: none !important; }
+    .content-area { margin-left: 0; }
+    .page-wrap { padding: 0; }
+  }
 </style>
 </head>
 <body>
+<!-- 헤더 -->
+<header class="site-header">
+  <div class="site-header-inner">
+    <a href="./" class="site-logo">
+      <img src="https://www.bufs.ac.kr/data/logo/top_logo_w.png" alt="부산외국어대학교 로고">
+      부산외국어대학교 규정관리시스템
+    </a>
+    <div class="header-actions">
+      <a id="pdfBtnHeader" class="pdf-btn-header" target="_blank">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        다운로드
+      </a>
+      <button class="print-btn-header" onclick="window.print()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        인쇄
+      </button>
+      <a href="./" class="back-btn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        검색으로 돌아가기
+      </a>
+    </div>
+  </div>
+</header>
+
 <div id="app">
   <nav class="toc">
-    <button class="back-btn" onclick="window.top.location.href='./'; return false;">
-      <span class="back-btn-icon">←</span><span>홈 화면으로 돌아가기</span>
-    </button>
-  <div class="toc-header"><div class="skeleton-line" style="width:70%"></div></div>
     <div class="toc-header"><div class="skeleton-line" style="width:70%"></div></div>
-    <div style="padding:10px">
+    <div style="padding:0 8px">
       <div class="skeleton-line" style="width:80%"></div>
       <div class="skeleton-line" style="width:60%; margin-left:20px"></div>
       <div class="skeleton-line" style="width:80%"></div>
@@ -187,14 +214,14 @@
   </nav>
   <div class="content-area">
     <div class="page-wrap">
-      <div class="skeleton-line" style="width:40%; height:40px; margin: 0 auto 30px"></div>
+      <div class="skeleton-line" style="width:40%; height:32px; margin: 0 auto 24px"></div>
       <div class="skeleton-block"></div>
       <div class="skeleton-block"></div>
     </div>
   </div>
 </div>
-<a id="pdfBtn" class="pdf-btn" target="_blank">PDF 다운로드 ↗</a>
-<button class="print-btn" onclick="window.print()">🖨 인쇄하기</button>
+<a id="pdfBtn" class="pdf-btn" target="_blank"></a>
+<button class="print-btn" onclick="window.print()"></button>
 
 <script>
 // 기존 데이터 처리 함수들 유지
@@ -262,12 +289,7 @@ function buildToc(regulationName, articleOrder, articleMap) {
     }
   });
 
-  // 돌아가기 버튼 HTML 삽입 (현재 창에서 열 때 가장 잘 작동함)
-let h = '<button class="back-btn" onclick="window.top.location.href=\'./\';">'
-      + '<span class="back-btn-icon">←</span>'
-      + '<span>홈 화면으로 돌아가기</span>'
-      + '</button>';
-  h += '<div class="toc-header"><div class="toc-reg-name">' + escHtml(regulationName) + '</div></div>';
+  let h = '<div class="toc-header"><div class="toc-reg-name">' + escHtml(regulationName) + '</div></div>';
   groups.forEach(chap => {
     if (chap.chapter) {
       const chapLabel = buildChapterNo(chap.chapter) + (chap.chapterTitle ? " " + chap.chapterTitle : "");
@@ -370,24 +392,34 @@ function renderFull(data) {
   const metaLines = [];
   if (data.meta) {
     const m = data.meta;
-    if (m.enactDate) metaLines.push("제정 " + escHtml(m.enactDate));
+    if (m.enactDate) metaLines.push("제정 : " + escHtml(m.enactDate));
     if (m.lastAmendDate && m.lastAmendDate !== m.enactDate) {
-      let line = escHtml((m.lastAmendType || "개정") + " " + m.lastAmendDate);
-      if (m.lastEffDate) line += "&nbsp;&nbsp;·&nbsp;&nbsp;시행 " + escHtml(m.lastEffDate);
-      metaLines.push(line);
+      metaLines.push("개정 : " + escHtml(m.lastAmendDate));
     }
   }
-  const metaHtml = metaLines.length ? metaLines.join("<br>") : "규정 전문";
+  const metaHtml = metaLines.length ? metaLines.join("<br>") : "";
+  const categoryBadge = (data.meta && data.meta.category)
+    ? '<span class="reg-category-badge">' + escHtml(data.meta.category) + '</span>'
+    : '';
+  const downloadBtn = data.pdfUrl
+    ? '<a href="' + escHtml(data.pdfUrl) + '" target="_blank" style="display:flex;align-items:center;gap:6px;padding:7px 14px;border:1px solid #e5e7eb;border-radius:6px;font-size:0.82rem;font-weight:500;color:#4b5563;text-decoration:none;transition:background 0.15s" onmouseover="this.style.background=\'#f1f3f5\'" onmouseout="this.style.background=\'\'"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>다운로드</a>'
+    : '';
 
   const tocHtml = buildToc(data.regulationName, articleOrder, articleMap);
 
-  document.title = data.regulationName + " 전문";
-  document.getElementById("app").innerHTML = tocHtml 
+  document.title = data.regulationName + " — 부산외국어대학교 규정관리시스템";
+  document.getElementById("app").innerHTML = tocHtml
     + '<div class="content-area"><div class="page-wrap">'
+    + '<div class="reg-title-block">'
+    + categoryBadge
     + '<h1 class="reg-title">' + escHtml(data.regulationName) + '</h1>'
+    + '<div class="reg-meta-row">'
     + '<div class="reg-meta">' + metaHtml + '</div>'
+    + downloadBtn
+    + '</div>'
+    + '</div>'
     + bodyHtml + amendHtml
-    + '<div class="doc-end">— 끝 —</div></div></div>';
+    + '</div></div>';
 
   initTocHighlight();
 }
@@ -429,9 +461,16 @@ try {
   if (!raw) throw new Error("no data");
   const data = JSON.parse(raw);
   renderFull(data);
-  if (data.pdfUrl) { const btn = document.getElementById("pdfBtn"); btn.href = data.pdfUrl; btn.style.display = "block"; }
+  if (data.pdfUrl) {
+    const hdrBtn = document.getElementById("pdfBtnHeader");
+    if (hdrBtn) { hdrBtn.href = data.pdfUrl; hdrBtn.style.display = "flex"; }
+  }
 } catch(e) {
-  document.getElementById("app").innerHTML = '<div class="error-screen"><p>데이터를 불러올 수 없습니다.<br>검색 페이지에서 규정을 다시 선택해 주세요.</p></div>';
+  document.getElementById("app").innerHTML =
+    '<div style="text-align:center;padding:80px 32px;color:#6b7280">'
+    + '<p style="font-size:1rem;margin-bottom:16px">데이터를 불러올 수 없습니다.<br>검색 페이지에서 규정을 다시 선택해 주세요.</p>'
+    + '<a href="./" style="display:inline-block;padding:8px 20px;border:1px solid #e5e7eb;border-radius:6px;font-size:0.85rem;color:#4b5563;text-decoration:none">← 검색으로 돌아가기</a>'
+    + '</div>';
 }
 </script>
 </body>
