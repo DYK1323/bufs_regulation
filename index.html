@@ -438,7 +438,9 @@ function renderArticleBody(articleRows, kw) {
   const paraCount = articleRows.filter(r => r.paragraphNo && !r.itemNo).length;
   let html = "";
   articleRows.forEach(r => {
-    if (r.itemNo) {
+    if (r.subitemNo) {
+      html += '<span class="subitem-line">' + escHtml(r.subitemNo) + ".&nbsp;" + highlightHtml(r.content, kw) + '</span>';
+    } else if (r.itemNo) {
       html += '<span class="item-line">' + escHtml(r.itemNo) + ".&nbsp;" + highlightHtml(r.content, kw) + '</span>';
     } else if (r.paragraphNo) {
       html += '<span class="para-line">'

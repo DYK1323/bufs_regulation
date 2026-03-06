@@ -342,7 +342,8 @@ function renderFull(data) {
         if (ct === "삭제") anno = '<span class="anno-del">&lt;' + escHtml(cd) + '&gt;</span>';
         else if (ct) anno = '<span class="anno-rev">(' + escHtml(ct) + ' ' + escHtml(cd) + ')</span>';
       }
-      if (r.itemNo) lines += '<span class="item-line">' + escHtml(r.itemNo) + ".&nbsp;" + allowHtml(r.content) + anno + '</span>';
+      if (r.subitemNo) lines += '<span class="subitem-line">' + escHtml(r.subitemNo) + ".&nbsp;" + allowHtml(r.content) + anno + '</span>';
+      else if (r.itemNo) lines += '<span class="item-line">' + escHtml(r.itemNo) + ".&nbsp;" + allowHtml(r.content) + anno + '</span>';
       else if (r.paragraphNo) lines += '<span class="para-line">' + (paraCount > 1 ? circle(r.paragraphNo) + "&nbsp;" : "") + allowHtml(r.content) + anno + '</span>';
     });
 
