@@ -198,6 +198,7 @@ function buildArticleNo(raw) {
   if (!raw) return "";
   const s = String(raw).trim();
   if (s.includes("_")) { const p = s.split("_"); return "제" + p[0] + "조의" + p[1]; }
+  if (s.includes("-")) { const p = s.split("-"); return "제" + p[0] + "조의" + p[1]; }
   return "제" + s + "조";
 }
 function allowHtml(s){

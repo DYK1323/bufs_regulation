@@ -329,6 +329,7 @@ function buildArticleNo(raw) {
   if (!raw) return "";
   const s = String(raw).trim();
   if (s.includes("_")) { const p = s.split("_"); return "제" + p[0] + "조의" + p[1]; }
+  if (s.includes("-")) { const p = s.split("-"); return "제" + p[0] + "조의" + p[1]; }
   return "제" + s + "조";
 }
 const CIRCLED = ["","①","②","③","④","⑤","⑥","⑦","⑧","⑨","⑩",
@@ -408,16 +409,16 @@ function initData() {
   }
 
   Promise.all([
-    fetchSheet("regulations"),
+    fetchSheet("regulation_meta"),
     fetchSheet("article"),
     fetchSheet("history")
   ]).then(([regRows, artRows, histRows]) => {
-    // regulations
+    // regulation_meta
     const regIdToName = {};
     REG_META_MAP = {};
     regRows.forEach(r => {
-      const id = String(r["reg_id"]||"").trim();
-      const name = String(r["reg_name"]||"").trim();
+      const id = String(r["regulation_code"]||r["reg_id"]||"").trim();
+      const name = String(r["regulation_name"]||r["reg_name"]||"").trim();
       if (!id||!name) return;
       regIdToName[id] = name;
       REG_META_MAP[name] = {
@@ -429,9 +430,10 @@ function initData() {
       };
     });
 
-    // article
+    // article (article_history 시트: regulation_code/regulation_name 컬럼)
     ALL_ROWS = artRows.map(r => ({
-      regulationName : regIdToName[String(r["reg_id"]||"").trim()] || String(r["reg_id"]||"").trim(),
+      regulationName : regIdToName[String(r["regulation_code"]||r["reg_id"]||"").trim()]
+                    || String(r["regulation_name"]||r["reg_id"]||"").trim(),
       chapter        : String(r["chapter"]||"").trim(),
       chapterTitle   : String(r["chapter_title"]||"").trim(),
       section        : String(r["section"]||"").trim(),
@@ -450,8 +452,9 @@ function initData() {
 
     // history
     ALL_AMENDMENTS = histRows.map(r => ({
-      regulationName : regIdToName[String(r["reg_id"]||"").trim()] || String(r["reg_name"]||r["reg_id"]||"").trim(),
-      seq            : Number(r["version"]) || 0,
+      regulationName : regIdToName[String(r["regulation_code"]||r["reg_id"]||"").trim()]
+                    || String(r["regulation_name"]||r["reg_name"]||"").trim(),
+      seq            : Number(r["amendment_seq"]||r["version"]) || 0,
       amendDate      : formatDateVal(r["change_date"]),
       amendType      : String(r["change_type"]||""),
       effectDate     : "",
