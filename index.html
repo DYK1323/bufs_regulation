@@ -355,8 +355,9 @@ function amendLabel(name) {
 
 // ── 초기 데이터 로드 ─────────────────────────────────────────
 function initData() {
-  google.script.run
-    .withSuccessHandler(function(data) {
+  fetch(SCRIPT_URL + "?action=data")
+    .then(response => response.json())
+    .then(data => {
       ALL_ROWS       = data.rows       || [];
       ALL_AMENDMENTS = data.amendments || [];
       REG_META_MAP   = data.regMeta    || {};
@@ -366,15 +367,9 @@ function initData() {
       document.getElementById("kw").focus();
       document.getElementById("initOverlay").classList.add("hidden");
     })
-    .withFailureHandler(function(err) {
-      document.getElementById("initMsg").textContent =
-        "데이터 로드 실패: " + err.message;
-    })
-    .getAllData();
-
-  google.script.run
-    .withSuccessHandler(function(url) { SCRIPT_URL = url; })
-    .getScriptUrl();
+    .catch(err => {
+      document.getElementById("initMsg").textContent = "데이터 로드 실패: " + err.message;
+    });
 }
 
 // ── 브라우저 내 검색 ─────────────────────────────────────────
@@ -569,14 +564,14 @@ function confirmClear() {
   msg.textContent = "초기화 중…";
   msg.className = "modal-msg";
 
-  google.script.run
-    .withSuccessHandler(function(result) {
+  fetch(SCRIPT_URL + "?action=clearCache&pw=" + encodeURIComponent(pw))
+    .then(response => response.json())
+    .then(result => {
       btn.disabled = false;
       msg.textContent = result.message;
       msg.className = "modal-msg " + (result.success ? "ok" : "err");
 
       if (result.success) {
-        // 캐시 초기화 성공 → 브라우저 데이터도 갱신
         setTimeout(function() {
           closeAdminModal();
           document.getElementById("initOverlay").classList.remove("hidden");
@@ -588,12 +583,11 @@ function confirmClear() {
         }, 1200);
       }
     })
-    .withFailureHandler(function(err) {
+    .catch(err => {
       btn.disabled = false;
       msg.textContent = "오류: " + err.message;
       msg.className = "modal-msg err";
-    })
-    .clearCacheWithPassword(pw);
+    });
 }
 
 function confirmSyncPdf() {
@@ -607,18 +601,18 @@ function confirmSyncPdf() {
   msg.textContent = "Drive 스캔 중…";
   msg.className = "modal-msg";
 
-  google.script.run
-    .withSuccessHandler(function(result) {
+  fetch(SCRIPT_URL + "?action=syncPdfUrls&pw=" + encodeURIComponent(pw))
+    .then(response => response.json())
+    .then(result => {
       btn.disabled = false;
       msg.textContent = result.message;
       msg.className = "modal-msg " + (result.success ? "ok" : "err");
     })
-    .withFailureHandler(function(err) {
+    .catch(err => {
       btn.disabled = false;
       msg.textContent = "오류: " + err.message;
       msg.className = "modal-msg err";
-    })
-    .syncPdfUrls(pw);
+    });
 }
 
 // 모달 외부 클릭 시 닫기
