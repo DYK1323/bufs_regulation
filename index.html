@@ -319,9 +319,9 @@
 </div>
 
 <script>
-const SPREADSHEET_ID = "1kEmnMb_SPPtDMWTiZ-f-SvHuixu04u9G-u4xz7GZWws";
 let ALL_ROWS       = [];
 let ALL_AMENDMENTS = [];
+let SCRIPT_URL     = "https://script.google.com/macros/s/AKfycbx5Sqkb3yN1yPqmjSLv_9JIFUuyEvEqVA0Lw6s4OlLwUwtmRj1zMz7NXAautTuzngbg/exec";
 let REG_META_MAP   = {};
 
 // ── 유틸 ─────────────────────────────────────────────────────
@@ -329,7 +329,6 @@ function buildArticleNo(raw) {
   if (!raw) return "";
   const s = String(raw).trim();
   if (s.includes("_")) { const p = s.split("_"); return "제" + p[0] + "조의" + p[1]; }
-  if (s.includes("-")) { const p = s.split("-"); return "제" + p[0] + "조의" + p[1]; }
   return "제" + s + "조";
 }
 const CIRCLED = ["","①","②","③","④","⑤","⑥","⑦","⑧","⑨","⑩",
@@ -354,123 +353,28 @@ function amendLabel(name) {
   return (m.lastAmendType ? m.lastAmendType + " " : "") + m.lastAmendDate;
 }
 
-// ── CSV 파서 ─────────────────────────────────────────────────
-function parseCSV(text) {
-  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1); // BOM 제거
-  const rows = [];
-  let row = [], cell = "", inQ = false;
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    if (inQ) {
-      if (ch === '"' && text[i+1] === '"') { cell += '"'; i++; }
-      else if (ch === '"') inQ = false;
-      else cell += ch;
-    } else {
-      if (ch === '"') inQ = true;
-      else if (ch === ',') { row.push(cell); cell = ""; }
-      else if (ch === '\n') { row.push(cell); rows.push(row); row = []; cell = ""; }
-      else if (ch !== '\r') cell += ch;
-    }
-  }
-  if (cell !== "" || row.length) { row.push(cell); rows.push(row); }
-  return rows;
-}
-
-// ── gviz CSV 시트 읽기 유틸 ──────────────────────────────────
-function fetchSheet(sheetName) {
-  const url = "https://docs.google.com/spreadsheets/d/" + SPREADSHEET_ID
-    + "/gviz/tq?tqx=out:csv&sheet=" + encodeURIComponent(sheetName)
-    + "&t=" + Date.now();
-  return fetch(url)
-    .then(r => r.text())
-    .then(text => {
-      const rows = parseCSV(text);
-      if (rows.length < 2) return [];
-      const cols = rows[0].map(h => h.toLowerCase().trim());
-      return rows.slice(1)
-        .filter(row => row.some(c => c !== ""))
-        .map(row => {
-          const obj = {};
-          cols.forEach((col, i) => { obj[col] = i < row.length ? row[i] : ""; });
-          return obj;
-        });
-    });
-}
-
-function safeArticleNo(val) {
-  if (val instanceof Date) return (val.getMonth()+1) + "-" + val.getDate();
-  if (typeof val === "string" && val.match(/^Date\((\d+),(\d+),(\d+)\)$/)) {
-    const m = val.match(/^Date\((\d+),(\d+),(\d+)\)$/);
-    return (parseInt(m[2])+1) + "-" + m[3];
-  }
-  return String(val || "").trim();
-}
-
-function formatDateVal(v) {
-  if (!v) return "";
-  if (typeof v === "string" && v.match(/^Date\((\d+),(\d+),(\d+)\)$/)) {
-    const m = v.match(/^Date\((\d+),(\d+),(\d+)\)$/);
-    const y=m[1], mo=String(parseInt(m[2])+1).padStart(2,"0"), d=String(m[3]).padStart(2,"0");
-    return y+"."+mo+"."+d+".";
-  }
-  return String(v);
-}
-
 // ── 초기 데이터 로드 ─────────────────────────────────────────
 function initData() {
-  Promise.all([
-    fetchSheet("regulations"),
-    fetchSheet("article"),
-    fetchSheet("history")
-  ]).then(([regRows, artRows, histRows]) => {
-    // regulations 시트 → 메타(날짜) 정보
-    REG_META_MAP = {};
-    regRows.forEach(r => {
-      const name = String(r["reg_name"]||r["regulation_name"]||"").trim();
-      if (!name) return;
-      REG_META_MAP[name] = {
-        pdfUrl        : "",
-        enactDate     : formatDateVal(r["enacted_date"]||r["enact_date"]),
-        lastAmendDate : formatDateVal(r["revised_date"]||r["last_amend_date"]),
-        lastAmendType : String(r["change_type"]||r["last_amend_type"]||"").trim(),
-        lastEffDate   : formatDateVal(r["effective_date"]||r["last_effect_date"]),
-      };
-    });
+  google.script.run
+    .withSuccessHandler(function(data) {
+      ALL_ROWS       = data.rows       || [];
+      ALL_AMENDMENTS = data.amendments || [];
+      REG_META_MAP   = data.regMeta    || {};
 
-    // article 시트 (record_status=active만, v3 스키마)
-    ALL_ROWS = artRows.filter(r => String(r["record_status"]||"active").trim() === "active").map(r => ({
-      regulationName : String(r["regulation_name"]||"").trim(),
-      chapter        : String(r["chapter"]||"").trim(),
-      chapterTitle   : String(r["chapter_title"]||"").trim(),
-      section        : String(r["section"]||"").trim(),
-      sectionTitle   : String(r["section_title"]||"").trim(),
-      articleNo      : safeArticleNo(r["article_no"]),
-      articleTitle   : String(r["article_title"]||"").trim(),
-      paragraphNo    : r["paragraph_no"],
-      itemNo         : String(r["item_no"]||"").trim(),
-      subitemNo      : String(r["subitem_no"]||"").trim(),
-      content        : String(r["content"]||""),
-      sortKey        : String(r["sort_key"]||"").trim(),
-      changeType     : String(r["change_type"]||"").trim(),
-    }));
+      document.getElementById("kw").disabled = false;
+      document.getElementById("searchBtn").disabled = false;
+      document.getElementById("kw").focus();
+      document.getElementById("initOverlay").classList.add("hidden");
+    })
+    .withFailureHandler(function(err) {
+      document.getElementById("initMsg").textContent =
+        "데이터 로드 실패: " + err.message;
+    })
+    .getAllData();
 
-    // history 시트
-    ALL_AMENDMENTS = histRows.map(r => ({
-      regulationName : String(r["reg_name"]||r["regulation_name"]||"").trim(),
-      seq            : Number(r["version"]||r["amendment_seq"]) || 0,
-      amendDate      : String(r["change_date"]||r["amendment_date"]||"").trim(),
-      amendType      : String(r["change_type"]||r["amendment_type"]||"").trim(),
-      effectDate     : String(r["effective_date"]||"").trim(),
-      content        : String(r["content"]||""),
-    }));
-
-    document.getElementById("kw").disabled = false;
-    document.getElementById("searchBtn").disabled = false;
-    document.getElementById("kw").focus();
-    document.getElementById("initOverlay").classList.add("hidden");
-  }).catch(err => {
-    document.getElementById("initMsg").textContent = "데이터 로드 실패: " + err.message;
-  });
+  google.script.run
+    .withSuccessHandler(function(url) { SCRIPT_URL = url; })
+    .getScriptUrl();
 }
 
 // ── 브라우저 내 검색 ─────────────────────────────────────────
@@ -532,12 +436,10 @@ function doSearch() {
 }
 
 function renderArticleBody(articleRows, kw) {
-  const paraCount = articleRows.filter(r => r.paragraphNo && !r.itemNo && !r.subitemNo).length;
+  const paraCount = articleRows.filter(r => r.paragraphNo && !r.itemNo).length;
   let html = "";
   articleRows.forEach(r => {
-    if (r.subitemNo) {
-      html += '<span class="subitem-line">' + escHtml(r.subitemNo) + ".&nbsp;" + highlightHtml(r.content, kw) + '</span>';
-    } else if (r.itemNo) {
+    if (r.itemNo) {
       html += '<span class="item-line">' + escHtml(r.itemNo) + ".&nbsp;" + highlightHtml(r.content, kw) + '</span>';
     } else if (r.paragraphNo) {
       html += '<span class="para-line">'
@@ -624,9 +526,7 @@ function renderResults(regMatches, articleMatches, kw) {
 
 function openFullPage(regulationName) {
   localStorage.setItem("targetRegulation", regulationName);
-  const regRows = ALL_ROWS
-    .filter(r => r.regulationName === regulationName)
-    .sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+  const regRows = ALL_ROWS.filter(r => r.regulationName === regulationName);
   const amends  = ALL_AMENDMENTS
     .filter(a => a.regulationName === regulationName)
     .sort((a, b) => a.seq - b.seq);
@@ -640,7 +540,8 @@ function openFullPage(regulationName) {
     meta 
   }));
 
-  location.href = "full.html";
+  // 현재 창 이동 방식으로 변경함
+  location.href = SCRIPT_URL + "?page=full";
 }
 
 // ── 관리자 모달 ──────────────────────────────────────────────
@@ -657,36 +558,67 @@ function closeAdminModal() {
   document.getElementById("adminModal").classList.remove("show");
 }
 
-const ADMIN_PASSWORD = "admin12345";
-
 function confirmClear() {
   const pw  = document.getElementById("adminPw").value;
   const btn = document.getElementById("confirmBtn");
   const msg = document.getElementById("modalMsg");
 
   if (!pw) { msg.textContent = "비밀번호를 입력해주세요."; msg.className = "modal-msg err"; return; }
-  if (pw !== ADMIN_PASSWORD) { msg.textContent = "비밀번호가 올바르지 않습니다."; msg.className = "modal-msg err"; return; }
 
-  sessionStorage.removeItem("regData_" + SPREADSHEET_ID);
-  msg.textContent = "캐시 초기화 완료."; msg.className = "modal-msg ok";
   btn.disabled = true;
+  msg.textContent = "초기화 중…";
+  msg.className = "modal-msg";
 
-  setTimeout(function() {
-    closeAdminModal();
-    document.getElementById("initOverlay").classList.remove("hidden");
-    document.getElementById("initMsg").textContent = "최신 데이터를 불러오는 중입니다…";
-    document.getElementById("kw").disabled = true;
-    document.getElementById("searchBtn").disabled = true;
-    ALL_ROWS = []; ALL_AMENDMENTS = []; REG_META_MAP = {};
-    btn.disabled = false;
-    initData();
-  }, 800);
+  google.script.run
+    .withSuccessHandler(function(result) {
+      btn.disabled = false;
+      msg.textContent = result.message;
+      msg.className = "modal-msg " + (result.success ? "ok" : "err");
+
+      if (result.success) {
+        // 캐시 초기화 성공 → 브라우저 데이터도 갱신
+        setTimeout(function() {
+          closeAdminModal();
+          document.getElementById("initOverlay").classList.remove("hidden");
+          document.getElementById("initMsg").textContent = "최신 데이터를 불러오는 중입니다…";
+          document.getElementById("kw").disabled = true;
+          document.getElementById("searchBtn").disabled = true;
+          ALL_ROWS = []; ALL_AMENDMENTS = []; REG_META_MAP = {};
+          initData();
+        }, 1200);
+      }
+    })
+    .withFailureHandler(function(err) {
+      btn.disabled = false;
+      msg.textContent = "오류: " + err.message;
+      msg.className = "modal-msg err";
+    })
+    .clearCacheWithPassword(pw);
 }
 
 function confirmSyncPdf() {
+  const pw  = document.getElementById("adminPw").value;
   const msg = document.getElementById("modalMsg");
-  msg.textContent = "PDF 링크 매핑은 Google Sheets에서 직접 관리하세요.";
-  msg.className = "modal-msg err";
+  const btn = document.getElementById("syncPdfBtn");
+
+  if (!pw) { msg.textContent = "비밀번호를 입력해주세요."; msg.className = "modal-msg err"; return; }
+
+  btn.disabled = true;
+  msg.textContent = "Drive 스캔 중…";
+  msg.className = "modal-msg";
+
+  google.script.run
+    .withSuccessHandler(function(result) {
+      btn.disabled = false;
+      msg.textContent = result.message;
+      msg.className = "modal-msg " + (result.success ? "ok" : "err");
+    })
+    .withFailureHandler(function(err) {
+      btn.disabled = false;
+      msg.textContent = "오류: " + err.message;
+      msg.className = "modal-msg err";
+    })
+    .syncPdfUrls(pw);
 }
 
 // 모달 외부 클릭 시 닫기

@@ -169,7 +169,7 @@
 <body>
 <div id="app">
   <nav class="toc">
-    <button class="back-btn" onclick="window.location.href='index.html'; return false;">
+    <button class="back-btn" onclick="window.top.location.href='https://script.google.com/macros/s/AKfycbx5Sqkb3yN1yPqmjSLv_9JIFUuyEvEqVA0Lw6s4OlLwUwtmRj1zMz7NXAautTuzngbg/exec'; return false;">
       <span class="back-btn-icon">←</span><span>홈 화면으로 돌아가기</span>
     </button>
   <div class="toc-header"><div class="skeleton-line" style="width:70%"></div></div>
@@ -198,7 +198,6 @@ function buildArticleNo(raw) {
   if (!raw) return "";
   const s = String(raw).trim();
   if (s.includes("_")) { const p = s.split("_"); return "제" + p[0] + "조의" + p[1]; }
-  if (s.includes("-")) { const p = s.split("-"); return "제" + p[0] + "조의" + p[1]; }
   return "제" + s + "조";
 }
 function allowHtml(s){
@@ -259,7 +258,7 @@ function buildToc(regulationName, articleOrder, articleMap) {
   });
 
   // 돌아가기 버튼 HTML 삽입 (현재 창에서 열 때 가장 잘 작동함)
-let h = '<button class="back-btn" onclick="window.location.href=\'index.html\';">'
+let h = '<button class="back-btn" onclick="window.top.location.href=\'https://script.google.com/macros/s/AKfycbx5Sqkb3yN1yPqmjSLv_9JIFUuyEvEqVA0Lw6s4OlLwUwtmRj1zMz7NXAautTuzngbg/exec\';">'
       + '<span class="back-btn-icon">←</span>'
       + '<span>홈 화면으로 돌아가기</span>'
       + '</button>';
@@ -297,7 +296,7 @@ let h = '<button class="back-btn" onclick="window.location.href=\'index.html\';"
 }
 
 function renderFull(data) {
-  const rows = (data.rows || []).slice().sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+  const rows = data.rows || [];
   const amends = data.amendments || [];
   const articleMap = {};
   const articleOrder = [];
@@ -319,7 +318,7 @@ function renderFull(data) {
     const art = articleMap[key];
     const artNo = buildArticleNo(art.articleNo);
     const artTitle = art.articleTitle ? "(" + art.articleTitle + ")" : "";
-    const paraCount = art.rows.filter(r => r.paragraphNo && !r.itemNo && !r.subitemNo).length;
+    const paraCount = art.rows.filter(r => r.paragraphNo && !r.itemNo).length;
 
     if (art.chapter && art.chapter !== prevChapter) {
       bodyHtml += '<div class="chapter-header" id="' + chapAnchorId(art.chapter) + '">' + escHtml(buildChapterNo(art.chapter)) + '&nbsp;&nbsp;' + escHtml(art.chapterTitle) + '</div>';
@@ -330,14 +329,24 @@ function renderFull(data) {
       prevSection = art.section;
     }
 
+    const ART_LEVEL_TYPES = ["본조신설", "전부개정"];
+    const artLevelRow = art.rows.find(r => ART_LEVEL_TYPES.indexOf(r.changeType || "") >= 0);
+    const artLevelAnno = artLevelRow ? '<div class="art-revision">(' + escHtml(artLevelRow.changeType) + ' ' + escHtml(artLevelRow.changeDate) + ')</div>' : '';
+
     let lines = "";
     art.rows.forEach(r => {
-      if (r.subitemNo) lines += '<span class="subitem-line">' + escHtml(r.subitemNo) + ".&nbsp;" + allowHtml(r.content) + '</span>';
-      else if (r.itemNo) lines += '<span class="item-line">' + escHtml(r.itemNo) + ".&nbsp;" + allowHtml(r.content) + '</span>';
-      else if (r.paragraphNo) lines += '<span class="para-line">' + (paraCount > 1 ? circle(r.paragraphNo) + "&nbsp;" : "") + allowHtml(r.content) + '</span>';
+      const ct = r.changeType || "";
+      const cd = r.changeDate || "";
+      let anno = "";
+      if (cd && ART_LEVEL_TYPES.indexOf(ct) < 0 && ct !== "신규") {
+        if (ct === "삭제") anno = '<span class="anno-del">&lt;' + escHtml(cd) + '&gt;</span>';
+        else if (ct) anno = '<span class="anno-rev">(' + escHtml(ct) + ' ' + escHtml(cd) + ')</span>';
+      }
+      if (r.itemNo) lines += '<span class="item-line">' + escHtml(r.itemNo) + ".&nbsp;" + allowHtml(r.content) + anno + '</span>';
+      else if (r.paragraphNo) lines += '<span class="para-line">' + (paraCount > 1 ? circle(r.paragraphNo) + "&nbsp;" : "") + allowHtml(r.content) + anno + '</span>';
     });
 
-    bodyHtml += '<div class="article" id="' + artAnchorId(art.articleNo) + '">' + '<div class="article-title">' + escHtml(artNo + artTitle) + '</div>' + '<div class="article-body">' + lines + '</div></div>';
+    bodyHtml += '<div class="article" id="' + artAnchorId(art.articleNo) + '">' + '<div class="article-title">' + escHtml(artNo + artTitle) + '</div>' + '<div class="article-body">' + lines + '</div>' + artLevelAnno + '</div>';
   });
 
   let amendHtml = "";

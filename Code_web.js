@@ -1,7 +1,8 @@
 // ================================================================
-//  Code_web.gs  ─  규정 키워드 검색 + 전문 조회 웹앱
-//  최적화: CacheService + 브라우저 검색 처리
-//  관리자: 비밀번호 인증 후 캐시 초기화 가능
+//  Code_web.gs  ─  규정 검색 시스템 API (GitHub Pages 연동)
+//  GET ?action=data             → 전체 데이터 JSON 반환
+//  GET ?action=clearCache&pw=   → 캐시 초기화 + article 동기화
+//  CacheService 활용 (6시간 TTL)
 // ================================================================
 
 const CACHE_KEY_REG   = "regulation_data";
@@ -11,30 +12,34 @@ const CACHE_EXPIRY    = 21600; // 6시간
 // ⚠️ 관리자 비밀번호 — 여기서 변경하세요
 const ADMIN_PASSWORD  = "admin12345";
 
-// ⚠️ PDF 파일을 업로드한 Google Drive 폴더 ID — 여기서 설정하세요
-// 폴더 URL: https://drive.google.com/drive/folders/XXXX 에서 XXXX 부분
-const PDF_FOLDER_ID   = "1aUOl9pRDLDVG6aowyNAug-iwG50NvEY1";
-
 function doGet(e) {
-  const page = e && e.parameter && e.parameter.page;
-  if (page === "full") {
-    return HtmlService
-      .createHtmlOutputFromFile("full")
-      .setTitle("규정 전문")
-      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  const action = e && e.parameter && e.parameter.action;
+
+  if (action === "data") {
+    const data = getAllData();
+    return ContentService
+      .createTextOutput(JSON.stringify(data))
+      .setMimeType(ContentService.MimeType.JSON);
   }
-  return HtmlService
-    .createHtmlOutputFromFile("index")
-    .setTitle("규정 검색 시스템")
-    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+
+  if (action === "clearCache") {
+    const pw     = (e.parameter && e.parameter.pw) || "";
+    const result = clearCacheWithPassword(pw);
+    return ContentService
+      .createTextOutput(JSON.stringify(result))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
+  return ContentService
+    .createTextOutput(JSON.stringify({ error: "action 파라미터가 필요합니다. (?action=data)" }))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
 // ================================================================
 //  전체 데이터 로드 (캐시 우선)
 // ================================================================
 function getAllData() {
-
-  const cache = CacheService.getScriptCache();
+  const cache       = CacheService.getScriptCache();
   const cachedReg   = cache.get(CACHE_KEY_REG);
   const cachedAmend = cache.get(CACHE_KEY_AMEND);
   const cachedMeta  = cache.get("regulation_meta");
@@ -48,13 +53,12 @@ function getAllData() {
     };
   }
 
-  // 캐시 없으면 시트에서 읽고 캐시 저장
   const data = loadFromSheet();
 
   try {
-    cache.put(CACHE_KEY_REG,   JSON.stringify(data.rows),       CACHE_EXPIRY);
-    cache.put(CACHE_KEY_AMEND, JSON.stringify(data.amendments), CACHE_EXPIRY);
-    cache.put("regulation_meta", JSON.stringify(data.regMeta),  CACHE_EXPIRY);
+    cache.put(CACHE_KEY_REG,     JSON.stringify(data.rows),       CACHE_EXPIRY);
+    cache.put(CACHE_KEY_AMEND,   JSON.stringify(data.amendments), CACHE_EXPIRY);
+    cache.put("regulation_meta", JSON.stringify(data.regMeta),    CACHE_EXPIRY);
   } catch(e) {
     Logger.log("캐시 저장 실패: " + e.message);
   }
@@ -63,7 +67,7 @@ function getAllData() {
 }
 
 // ================================================================
-//  시트에서 직접 읽기  (v4 스키마: article / history / regulations)
+//  시트에서 직접 읽기
 // ================================================================
 function loadFromSheet() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -71,8 +75,8 @@ function loadFromSheet() {
   // ── 1. regulations 시트 → reg_id/name 맵 + regMeta ──────────
   const regSheet = ss.getSheetByName("regulations");
   const regRaw   = regSheet ? regSheet.getDataRange().getValues() : [];
-  const regIdToName = {};  // { "2101": "학칙", ... }
-  const regMeta     = {};  // { "학칙": { pdfUrl, enactDate, ... } }
+  const regIdToName = {};
+  const regMeta     = {};
 
   if (regRaw.length >= 2) {
     const rh       = regRaw[0].map(h => String(h).toLowerCase().trim());
@@ -86,8 +90,8 @@ function loadFromSheet() {
 
     if (iRId >= 0 && iRName >= 0) {
       regRaw.slice(1).forEach(r => {
-        const regId   = String(rg(r, iRId)   || "").trim();
-        const regName = String(rg(r, iRName)  || "").trim();
+        const regId   = String(rg(r, iRId)  || "").trim();
+        const regName = String(rg(r, iRName) || "").trim();
         if (!regId || !regName) return;
         regIdToName[regId] = regName;
         regMeta[regName] = {
@@ -111,16 +115,16 @@ function loadFromSheet() {
   const ac = name => ah.indexOf(name);
   const ag = (r, i) => i >= 0 ? r[i] : "";
 
-  const iRegId    = ac("reg_id");
-  const iArtNo    = ac("article_no");
-  const iArtTit   = ac("article_title");
-  const iChapter  = ac("chapter");
-  const iChTitle  = ac("chapter_title");
-  const iSection  = ac("section");
-  const iSecTit   = ac("section_title");
-  const iPara     = ac("paragraph_no");
-  const iItem     = ac("item_no");
-  const iSub      = ac("subitem_no");
+  const iRegId      = ac("reg_id");
+  const iArtNo      = ac("article_no");
+  const iArtTit     = ac("article_title");
+  const iChapter    = ac("chapter");
+  const iChTitle    = ac("chapter_title");
+  const iSection    = ac("section");
+  const iSecTit     = ac("section_title");
+  const iPara       = ac("paragraph_no");
+  const iItem       = ac("item_no");
+  const iSub        = ac("subitem_no");
   const iCont       = ac("content");
   const iSort       = ac("sort_key");
   const iRevDates   = ac("revision_dates");
@@ -172,9 +176,9 @@ function loadFromSheet() {
         regulationName : regName,
         seq            : Number(hg(r, iHRound)) || 0,
         amendDate      : formatDate(hg(r, iHDate)),
-        amendType      : String(hg(r, iHType)   || ""),
+        amendType      : String(hg(r, iHType) || ""),
         effectDate     : "",
-        content        : String(hg(r, iHCont)   || "")
+        content        : String(hg(r, iHCont) || "")
       };
     });
   }
@@ -184,15 +188,10 @@ function loadFromSheet() {
 
 // ================================================================
 //  article_history → article 동기화 (내부용)
-//  article_history 의 record_status="active" 행만 article 시트에 기록.
-//  revision_dates: article_history의 change_type/change_date를 조 단위로 집계.
-//    · 신설/개정/본조신설/전부개정 → (타입 date1, date2, ...)
-//    · 삭제 → <date>  (삭제된 경우 해당 표기만)
 // ================================================================
 function syncArticle_() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
 
-  // 1. article_history 읽기
   const ahSheet = ss.getSheetByName("article_history");
   if (!ahSheet) return { success: false, message: "article_history 시트 없음" };
 
@@ -202,11 +201,7 @@ function syncArticle_() {
   const ah = ahData[0].map(h => String(h).toLowerCase().trim());
   const c  = name => ah.indexOf(name);
 
-  // Phase 1: (reg_id + article_no) 별로 change_type → dates 수집
-  // key: "regId||artNo"  →  { "신설": [dates], "개정": [dates], ... }
-  // ※ superseded 포함 — 전체 개정 이력을 revision_dates에 반영하기 위해
   const artRevMap = {};
-
   for (let i = 1; i < ahData.length; i++) {
     const r     = ahData[i];
     const regId = String(r[c("reg_id")]      || "").trim();
@@ -222,8 +217,6 @@ function syncArticle_() {
     if (artRevMap[key][ctype].indexOf(cdate) < 0) artRevMap[key][ctype].push(cdate);
   }
 
-  // Phase 2: 포맷 함수
-  // 삭제가 있으면 <date> 하나만; 아니면 타입별 그룹 나열
   function formatRevDates(typeMap) {
     if (!typeMap) return "";
     if (typeMap["삭제"] && typeMap["삭제"].length > 0) {
@@ -234,13 +227,11 @@ function syncArticle_() {
     for (let ti = 0; ti < ORDER.length; ti++) {
       const ctype = ORDER[ti];
       if (!typeMap[ctype] || typeMap[ctype].length === 0) continue;
-      const dates = typeMap[ctype].slice().sort();
-      parts.push("(" + ctype + " " + dates.join(", ") + ")");
+      parts.push("(" + ctype + " " + typeMap[ctype].slice().sort().join(", ") + ")");
     }
     return parts.join(" ");
   }
 
-  // Phase 3: article 시트 행 생성 (active 행만)
   const ARTICLE_COLS = [
     "reg_id", "article_no", "article_title",
     "chapter", "chapter_title", "section", "section_title",
@@ -279,7 +270,6 @@ function syncArticle_() {
     ]);
   }
 
-  // 4. article 시트 덮어쓰기
   let artSheet = ss.getSheetByName("article");
   if (!artSheet) {
     artSheet = ss.insertSheet("article");
@@ -303,13 +293,11 @@ function clearCacheWithPassword(password) {
   }
 
   try {
-    // article 시트 동기화 (active 행만 추출)
     const syncResult = syncArticle_();
     const syncMsg    = syncResult.success
-      ? `article 동기화 완료 (${syncResult.count}행).`
-      : `article 동기화 실패: ${syncResult.message}`;
+      ? "article 동기화 완료 (" + syncResult.count + "행)."
+      : "article 동기화 실패: " + syncResult.message;
 
-    // 캐시 전체 초기화
     const cache = CacheService.getScriptCache();
     cache.remove(CACHE_KEY_REG);
     cache.remove(CACHE_KEY_AMEND);
@@ -317,63 +305,10 @@ function clearCacheWithPassword(password) {
 
     return {
       success: true,
-      message: `${syncMsg} 캐시 초기화 완료. 페이지를 새로고침하면 최신 데이터가 반영됩니다.`
+      message: syncMsg + " 캐시 초기화 완료. 페이지를 새로고침하면 최신 데이터가 반영됩니다."
     };
   } catch(e) {
     return { success: false, message: "초기화 실패: " + e.message };
-  }
-}
-
-// ================================================================
-//  PDF 링크 자동 매핑 (Drive 폴더 스캔 → regulation_meta.pdf_url 갱신)
-// ================================================================
-function syncPdfUrls(password) {
-  if (password !== ADMIN_PASSWORD) {
-    return { success: false, message: "비밀번호가 올바르지 않습니다." };
-  }
-  if (!PDF_FOLDER_ID) {
-    return { success: false, message: "Code_web.js의 PDF_FOLDER_ID를 먼저 설정하세요." };
-  }
-
-  try {
-    // Drive 폴더 내 파일명 → URL 맵 구성
-    const folder  = DriveApp.getFolderById(PDF_FOLDER_ID);
-    const files   = folder.getFiles();
-    const fileMap = {};
-    while (files.hasNext()) {
-      const f = files.next();
-      fileMap[f.getName()] = f.getUrl();
-    }
-
-    // regulations 시트 갱신
-    const ss       = SpreadsheetApp.getActiveSpreadsheet();
-    const regSheet = ss.getSheetByName("regulations");
-    if (!regSheet) return { success: false, message: "regulations 시트가 없습니다." };
-
-    const data   = regSheet.getDataRange().getValues();
-    const header = data[0].map(h => String(h).toLowerCase().trim());
-    const iFile  = header.indexOf("pdf_filename");
-    const iUrl   = header.indexOf("pdf_url");
-    if (iFile < 0 || iUrl < 0) return { success: false, message: "regulations 시트에 pdf_filename/pdf_url 컬럼이 없습니다." };
-
-    let matched = 0;
-    for (let i = 1; i < data.length; i++) {
-      const fname = String(data[i][iFile] || "").trim();
-      if (fname && fileMap[fname]) {
-        regSheet.getRange(i + 1, iUrl + 1).setValue(fileMap[fname]);
-        matched++;
-      }
-    }
-
-    // 캐시 초기화 (다음 조회 시 최신 반영)
-    CacheService.getScriptCache().remove("regulation_meta");
-
-    return {
-      success: true,
-      message: `Drive 파일 ${Object.keys(fileMap).length}개 스캔, ${matched}개 매핑 완료.`
-    };
-  } catch(e) {
-    return { success: false, message: "오류: " + e.message };
   }
 }
 
@@ -382,17 +317,9 @@ function syncPdfUrls(password) {
 // ================================================================
 function safeArticleNo(val) {
   if (val instanceof Date) {
-    // "2-2" → Date(2026-02-02) → "2-2" 복원
     return (val.getMonth() + 1) + "-" + val.getDate();
   }
   return String(val || "").trim();
-}
-
-// ================================================================
-//  웹앱 URL 반환
-// ================================================================
-function getScriptUrl() {
-  return ScriptApp.getService().getUrl();
 }
 
 // ================================================================
@@ -410,7 +337,6 @@ function formatDate(raw) {
   const mKor   = s.match(/(\d{4})년\s*(\d{1,2})월\s*(\d{1,2})일/);
   const mDash  = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   const mDot   = s.match(/^(\d{4})\.(\d{2})\.(\d{2})\.?$/);
-  // "개정 YYYY. M. D." 또는 "개정YYYY. M. D." 등 접두사 포함 형식
   const mLoose = s.match(/(\d{4})\.\s*(\d{1,2})\.\s*(\d{1,2})/);
   if (mKor)   return mKor[1]   + "." + String(mKor[2]).padStart(2,"0")   + "." + String(mKor[3]).padStart(2,"0")   + ".";
   if (mDash)  return mDash[1]  + "." + mDash[2]  + "." + mDash[3]  + ".";
