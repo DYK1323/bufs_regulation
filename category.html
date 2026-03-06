@@ -183,7 +183,7 @@ document.querySelectorAll(".site-nav a").forEach(a => {
 
 function headerSearch() {
   const kw = document.getElementById("headerKw").value.trim();
-  if (kw) location.href = "./?q=" + encodeURIComponent(kw);
+  if (kw) location.href = "search.html?q=" + encodeURIComponent(kw);
 }
 
 function init() {
@@ -216,7 +216,7 @@ function getSubCategories(catNo) {
 function render() {
   const catLabel = CAT_LABELS[currentCatNo] || "규정 목록";
   document.title = catLabel + " — 부산외국어대학교 규정관리시스템";
-  document.getElementById("pageTitle").textContent = "제" + toKorNum(Number(currentCatNo)) + "편 " + catLabel;
+  document.getElementById("pageTitle").textContent = "제" + currentCatNo + "편 " + catLabel;
 
   // 학사규정 서브탭
   if (currentCatNo === "4") {
@@ -225,7 +225,7 @@ function render() {
       let tabHtml = '<div class="sub-tabs">';
       tabHtml += '<button class="sub-tab' + (!currentSubNo ? ' active' : '') + '" onclick="navigate(\'4\',\'\')">' + '전체' + '</button>';
       subList.forEach(sub => {
-        const label = "제" + toKorNum(Number(sub.no)) + "장 " + sub.name;
+        const label = "제" + sub.no + "장 " + sub.name;
         tabHtml += '<button class="sub-tab' + (currentSubNo === sub.no ? ' active' : '') + '" onclick="navigate(\'4\',\'' + escHtml(sub.no) + '\')">' + escHtml(label) + '</button>';
       });
       tabHtml += '</div>';
@@ -235,7 +235,7 @@ function render() {
     }
     if (currentSubNo) {
       const sub = getSubCategories("4").find(s => s.no === currentSubNo);
-      document.getElementById("pageSubtitle").textContent = sub ? "제" + toKorNum(Number(sub.no)) + "장 " + sub.name : "";
+      document.getElementById("pageSubtitle").textContent = sub ? "제" + sub.no + "장 " + sub.name : "";
     } else {
       document.getElementById("pageSubtitle").textContent = "";
     }
