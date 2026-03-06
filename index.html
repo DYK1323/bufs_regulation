@@ -396,6 +396,12 @@ function initData() {
 
       // localStorage에 regList 저장 (category.html에서 사용)
       try { localStorage.setItem("regList", JSON.stringify(REG_LIST)); } catch(e) {}
+      // sessionStorage에 검색 데이터 저장 (search.html에서 재사용)
+      try {
+        sessionStorage.setItem("searchData", JSON.stringify({
+          rows: data.rows || [], amendments: data.amendments || [], regMeta: data.regMeta || {}
+        }));
+      } catch(e) {}
 
       document.getElementById("initOverlay").classList.add("hidden");
       renderRecentAmendments();
@@ -447,7 +453,6 @@ function renderRecentAmendments() {
 }
 
 function openFullPage(regulationName) {
-  localStorage.setItem("targetRegulation", regulationName);
   location.href = "full.html?reg=" + encodeURIComponent(regulationName);
 }
 
@@ -488,9 +493,8 @@ function confirmClear() {
           closeAdminModal();
           document.getElementById("initOverlay").classList.remove("hidden");
           document.getElementById("initMsg").textContent = "최신 데이터를 불러오는 중입니다…";
-          document.getElementById("kw").disabled = true;
-          document.getElementById("searchBtn").disabled = true;
-          ALL_ROWS = []; ALL_AMENDMENTS = []; REG_META_MAP = {};
+          REG_META_MAP = {}; REG_LIST = []; RECENT_AMENDMENTS = [];
+          try { sessionStorage.removeItem("searchData"); } catch(e) {}
           initData();
         }, 1200);
       }

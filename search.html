@@ -356,31 +356,47 @@ function amendLabel(name) {
 }
 
 // ── 초기 데이터 로드 ─────────────────────────────────────────
+function applyData(rows, amendments, regMeta, regList) {
+  ALL_ROWS       = rows       || [];
+  ALL_AMENDMENTS = amendments || [];
+  REG_META_MAP   = regMeta    || {};
+  REG_LIST       = regList    || [];
+  document.getElementById("kw").disabled = false;
+  document.getElementById("searchBtn").disabled = false;
+  document.getElementById("kwHeader").disabled = false;
+  document.getElementById("initOverlay").classList.add("hidden");
+  const q = decodeURIComponent(new URLSearchParams(location.search).get("q") || "").trim();
+  if (q) {
+    document.getElementById("kw").value = q;
+    document.getElementById("kwHeader").value = q;
+    doSearch(q);
+  } else {
+    document.getElementById("kw").focus();
+  }
+}
+
 function initData() {
+  // sessionStorage에 캐시된 데이터가 있으면 API 호출 없이 즉시 사용
+  try {
+    const cached = sessionStorage.getItem("searchData");
+    if (cached) {
+      const d = JSON.parse(cached);
+      const regList = JSON.parse(localStorage.getItem("regList") || "[]");
+      applyData(d.rows, d.amendments, d.regMeta, regList);
+      return;
+    }
+  } catch(e) {}
+
   fetch(SCRIPT_URL + "?action=data")
     .then(response => response.json())
     .then(data => {
-      ALL_ROWS       = data.rows       || [];
-      ALL_AMENDMENTS = data.amendments || [];
-      REG_META_MAP   = data.regMeta    || {};
-      REG_LIST       = data.regList    || [];
-
-      try { localStorage.setItem("regList", JSON.stringify(REG_LIST)); } catch(e) {}
-
-      document.getElementById("kw").disabled = false;
-      document.getElementById("searchBtn").disabled = false;
-      document.getElementById("kwHeader").disabled = false;
-      document.getElementById("initOverlay").classList.add("hidden");
-
-      // URL에 q 파라미터가 있으면 자동 검색
-      const q = decodeURIComponent(new URLSearchParams(location.search).get("q") || "").trim();
-      if (q) {
-        document.getElementById("kw").value = q;
-        document.getElementById("kwHeader").value = q;
-        doSearch(q);
-      } else {
-        document.getElementById("kw").focus();
-      }
+      try { localStorage.setItem("regList", JSON.stringify(data.regList || [])); } catch(e) {}
+      try {
+        sessionStorage.setItem("searchData", JSON.stringify({
+          rows: data.rows || [], amendments: data.amendments || [], regMeta: data.regMeta || {}
+        }));
+      } catch(e) {}
+      applyData(data.rows, data.amendments, data.regMeta, data.regList);
     })
     .catch(err => {
       const overlay = document.getElementById("initOverlay");
@@ -609,6 +625,7 @@ function confirmClear() {
           document.getElementById("searchBtn").disabled = true;
           document.getElementById("kwHeader").disabled = true;
           ALL_ROWS = []; ALL_AMENDMENTS = []; REG_META_MAP = {};
+          try { sessionStorage.removeItem("searchData"); } catch(e) {}
           initData();
         }, 1200);
       }
