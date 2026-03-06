@@ -267,9 +267,9 @@ function syncArticle_() {
     const regId = String(r[c("reg_id")]      || "").trim();
     const artNo = safeArticleNo(r[c("article_no")]);
     const ctype = String(r[c("change_type")] || "").trim();
-    const cdate = String(r[c("change_date")] || "").trim();
+    const cdate = formatDate(r[c("change_date")]);   // Date 객체도 정규화
 
-    if (!regId || !artNo || !ctype || ctype === "신규" || !cdate) continue;
+    if (!regId || !artNo || !ctype || !cdate) continue;
 
     const key = regId + "||" + artNo;
     if (!artRevMap[key]) artRevMap[key] = {};

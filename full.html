@@ -106,6 +106,8 @@
   .item-line { display: block; padding-left: 2.4em; text-indent: -1.2em; margin-bottom: 2px; }
   .subitem-line { display: block; padding-left: 3.6em; text-indent: -1.2em; margin-bottom: 2px; }
 
+  .art-rev-dates { margin-top: 8px; font-size: 0.78rem; color: var(--ink-muted); font-style: italic; }
+
   /* 부칙 스타일 */
   .amendment-section { margin-top: 80px; padding-top: 40px; border-top: 2px solid var(--primary); }
   .amendment-section-title { font-size: 0.75rem; font-weight: 800; color: var(--ink-muted); letter-spacing: 0.2em; margin-bottom: 30px; text-transform: uppercase; text-align: center; }
@@ -347,7 +349,9 @@ function renderFull(data) {
       else if (r.paragraphNo) lines += '<span class="para-line">' + (paraCount > 1 ? circle(r.paragraphNo) + "&nbsp;" : "") + allowHtml(r.content) + anno + '</span>';
     });
 
-    bodyHtml += '<div class="article" id="' + artAnchorId(art.articleNo) + '">' + '<div class="article-title">' + escHtml(artNo + artTitle) + '</div>' + '<div class="article-body">' + lines + '</div>' + artLevelAnno + '</div>';
+    const revDates = (art.rows[0] && art.rows[0].revisionDates) || "";
+    const revDatesHtml = revDates ? '<div class="art-rev-dates">' + escHtml(revDates) + '</div>' : '';
+    bodyHtml += '<div class="article" id="' + artAnchorId(art.articleNo) + '">' + '<div class="article-title">' + escHtml(artNo + artTitle) + '</div>' + '<div class="article-body">' + lines + '</div>' + artLevelAnno + revDatesHtml + '</div>';
   });
 
   let amendHtml = "";
