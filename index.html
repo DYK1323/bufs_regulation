@@ -405,19 +405,6 @@ function formatDateVal(v) {
 
 // ── 초기 데이터 로드 ─────────────────────────────────────────
 function initData() {
-  const cached = sessionStorage.getItem("regData_" + SPREADSHEET_ID);
-  if (cached) {
-    try {
-      const data = JSON.parse(cached);
-      ALL_ROWS = data.rows; ALL_AMENDMENTS = data.amendments; REG_META_MAP = data.regMeta;
-      document.getElementById("kw").disabled = false;
-      document.getElementById("searchBtn").disabled = false;
-      document.getElementById("kw").focus();
-      document.getElementById("initOverlay").classList.add("hidden");
-      return;
-    } catch(e) { sessionStorage.removeItem("regData_" + SPREADSHEET_ID); }
-  }
-
   Promise.all([
     fetchSheet("regulation_meta"),
     fetchSheet("article_history"),
@@ -440,8 +427,8 @@ function initData() {
       };
     });
 
-    // article_history 시트
-    ALL_ROWS = artRows.map(r => ({
+    // article_history 시트 (record_status=active만)
+    ALL_ROWS = artRows.filter(r => String(r["record_status"]||"active").trim() === "active").map(r => ({
       regulationName : regIdToName[String(r["regulation_code"]||"").trim()]
                     || String(r["regulation_name"]||"").trim(),
       chapter        : String(r["chapter"]||"").trim(),
@@ -469,11 +456,6 @@ function initData() {
       effectDate     : String(r["effective_date"]||"").trim(),
       content        : String(r["content"]||""),
     }));
-
-    try {
-      sessionStorage.setItem("regData_" + SPREADSHEET_ID,
-        JSON.stringify({ rows: ALL_ROWS, amendments: ALL_AMENDMENTS, regMeta: REG_META_MAP }));
-    } catch(e) {}
 
     document.getElementById("kw").disabled = false;
     document.getElementById("searchBtn").disabled = false;

@@ -330,24 +330,13 @@ function renderFull(data) {
       prevSection = art.section;
     }
 
-    const ART_LEVEL_TYPES = ["본조신설", "전부개정"];
-    const artLevelRow = art.rows.find(r => ART_LEVEL_TYPES.indexOf(r.changeType || "") >= 0);
-    const artLevelAnno = artLevelRow ? '<div class="art-revision">(' + escHtml(artLevelRow.changeType) + ' ' + escHtml(artLevelRow.changeDate) + ')</div>' : '';
-
     let lines = "";
     art.rows.forEach(r => {
-      const ct = r.changeType || "";
-      const cd = r.changeDate || "";
-      let anno = "";
-      if (cd && ART_LEVEL_TYPES.indexOf(ct) < 0 && ct !== "신규") {
-        if (ct === "삭제") anno = '<span class="anno-del">&lt;' + escHtml(cd) + '&gt;</span>';
-        else if (ct) anno = '<span class="anno-rev">(' + escHtml(ct) + ' ' + escHtml(cd) + ')</span>';
-      }
-      if (r.itemNo) lines += '<span class="item-line">' + escHtml(r.itemNo) + ".&nbsp;" + allowHtml(r.content) + anno + '</span>';
-      else if (r.paragraphNo) lines += '<span class="para-line">' + (paraCount > 1 ? circle(r.paragraphNo) + "&nbsp;" : "") + allowHtml(r.content) + anno + '</span>';
+      if (r.itemNo) lines += '<span class="item-line">' + escHtml(r.itemNo) + ".&nbsp;" + allowHtml(r.content) + '</span>';
+      else if (r.paragraphNo) lines += '<span class="para-line">' + (paraCount > 1 ? circle(r.paragraphNo) + "&nbsp;" : "") + allowHtml(r.content) + '</span>';
     });
 
-    bodyHtml += '<div class="article" id="' + artAnchorId(art.articleNo) + '">' + '<div class="article-title">' + escHtml(artNo + artTitle) + '</div>' + '<div class="article-body">' + lines + '</div>' + artLevelAnno + '</div>';
+    bodyHtml += '<div class="article" id="' + artAnchorId(art.articleNo) + '">' + '<div class="article-title">' + escHtml(artNo + artTitle) + '</div>' + '<div class="article-body">' + lines + '</div></div>';
   });
 
   let amendHtml = "";
