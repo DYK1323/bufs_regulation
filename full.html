@@ -107,6 +107,9 @@
   .subitem-line { display: block; padding-left: 3.6em; text-indent: -1.2em; margin-bottom: 2px; }
 
   .art-rev-dates { margin-top: 8px; font-size: 0.78rem; color: var(--ink-muted); font-style: italic; }
+  .anno-rev { font-size: 0.78rem; color: var(--ink-muted); font-style: italic; margin-left: 4px; }
+  .anno-del { font-size: 0.78rem; color: #DC2626; font-style: italic; margin-left: 4px; }
+  .art-revision { margin-top: 6px; font-size: 0.78rem; color: var(--ink-muted); font-style: italic; }
 
   /* 부칙 스타일 */
   .amendment-section { margin-top: 80px; padding-top: 40px; border-top: 2px solid var(--primary); }
@@ -347,7 +350,7 @@ function renderFull(data) {
         else anno = '<span class="anno-rev">(' + escHtml(ct) + ' ' + escHtml(r.changeDate) + ')</span>';
       }
       if (r.subitemNo) lines += '<span class="subitem-line">' + escHtml(String(r.subitemNo).replace(/\.+$/, "")) + ".&nbsp;" + allowHtml(r.content) + anno + '</span>';
-      else if (r.itemNo) lines += '<span class="item-line">' + escHtml(r.itemNo) + ".&nbsp;" + allowHtml(r.content) + anno + '</span>';
+      else if (r.itemNo) lines += '<span class="item-line">' + escHtml(String(r.itemNo).replace(/\.+$/, "")) + ".&nbsp;" + allowHtml(r.content) + anno + '</span>';
       else if (r.paragraphNo) lines += '<span class="para-line">' + (paraCount > 1 ? circle(r.paragraphNo) + "&nbsp;" : "") + allowHtml(r.content) + anno + '</span>';
     });
 

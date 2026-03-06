@@ -441,7 +441,7 @@ function renderArticleBody(articleRows, kw) {
     if (r.subitemNo) {
       html += '<span class="subitem-line">' + escHtml(String(r.subitemNo).replace(/\.+$/, "")) + ".&nbsp;" + highlightHtml(r.content, kw) + '</span>';
     } else if (r.itemNo) {
-      html += '<span class="item-line">' + escHtml(r.itemNo) + ".&nbsp;" + highlightHtml(r.content, kw) + '</span>';
+      html += '<span class="item-line">' + escHtml(String(r.itemNo).replace(/\.+$/, "")) + ".&nbsp;" + highlightHtml(r.content, kw) + '</span>';
     } else if (r.paragraphNo) {
       html += '<span class="para-line">'
             + (paraCount > 1 ? circle(r.paragraphNo) + "&nbsp;" : "")
