@@ -439,7 +439,7 @@ function renderArticleBody(articleRows, kw) {
   let html = "";
   articleRows.forEach(r => {
     if (r.subitemNo) {
-      html += '<span class="subitem-line">' + escHtml(r.subitemNo) + ".&nbsp;" + highlightHtml(r.content, kw) + '</span>';
+      html += '<span class="subitem-line">' + escHtml(String(r.subitemNo).replace(/\.+$/, "")) + ".&nbsp;" + highlightHtml(r.content, kw) + '</span>';
     } else if (r.itemNo) {
       html += '<span class="item-line">' + escHtml(r.itemNo) + ".&nbsp;" + highlightHtml(r.content, kw) + '</span>';
     } else if (r.paragraphNo) {
