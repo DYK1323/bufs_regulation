@@ -195,9 +195,9 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
         인쇄
       </button>
-      <a href="./" class="back-btn">
+      <a href="javascript:history.back()" class="back-btn">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-        검색으로 돌아가기
+        돌아가기
       </a>
     </div>
   </div>
@@ -224,6 +224,7 @@
 <button class="print-btn" onclick="window.print()"></button>
 
 <script>
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx5Sqkb3yN1yPqmjSLv_9JIFUuyEvEqVA0Lw6s4OlLwUwtmRj1zMz7NXAautTuzngbg/exec";
 // 기존 데이터 처리 함수들 유지
 function escHtml(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 function buildArticleNo(raw) {
@@ -456,22 +457,60 @@ function initTocHighlight() {
   arts.forEach(el => observer.observe(el));
 }
 
-try {
+function loadFromLocalStorage() {
   const raw = localStorage.getItem("fullRegData");
-  if (!raw) throw new Error("no data");
+  if (!raw) return false;
   const data = JSON.parse(raw);
   renderFull(data);
   if (data.pdfUrl) {
     const hdrBtn = document.getElementById("pdfBtnHeader");
     if (hdrBtn) { hdrBtn.href = data.pdfUrl; hdrBtn.style.display = "flex"; }
   }
-} catch(e) {
+  return true;
+}
+
+function loadFromApi(regParam) {
   document.getElementById("app").innerHTML =
     '<div style="text-align:center;padding:80px 32px;color:#6b7280">'
-    + '<p style="font-size:1rem;margin-bottom:16px">데이터를 불러올 수 없습니다.<br>검색 페이지에서 규정을 다시 선택해 주세요.</p>'
-    + '<a href="./" style="display:inline-block;padding:8px 20px;border:1px solid #e5e7eb;border-radius:6px;font-size:0.85rem;color:#4b5563;text-decoration:none">← 검색으로 돌아가기</a>'
-    + '</div>';
+    + '<div style="width:32px;height:32px;border:3px solid #e5e7eb;border-top-color:#0d4a7a;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px"></div>'
+    + '<p style="font-size:0.85rem">규정 데이터를 불러오는 중입니다…</p></div>';
+  fetch(SCRIPT_URL + "?action=data")
+    .then(r => r.json())
+    .then(data => {
+      const rows   = (data.rows || []).filter(r => r.regulationName === regParam);
+      const amends = (data.amendments || []).filter(a => a.regulationName === regParam).sort((a,b) => a.seq - b.seq);
+      const meta   = (data.regMeta || {})[regParam] || {};
+      const payload = { regulationName: regParam, rows, amendments: amends, pdfUrl: meta.pdfUrl || "", meta };
+      try { localStorage.setItem("fullRegData", JSON.stringify(payload)); } catch(e2) {}
+      renderFull(payload);
+      if (payload.pdfUrl) {
+        const hdrBtn = document.getElementById("pdfBtnHeader");
+        if (hdrBtn) { hdrBtn.href = payload.pdfUrl; hdrBtn.style.display = "flex"; }
+      }
+    })
+    .catch(err => {
+      document.getElementById("app").innerHTML =
+        '<div style="text-align:center;padding:80px 32px;color:#6b7280">'
+        + '<p style="font-size:1rem;margin-bottom:16px">데이터를 불러올 수 없습니다.<br>' + escHtml(err.message) + '</p>'
+        + '<a href="search.html" style="display:inline-block;padding:8px 20px;border:1px solid #e5e7eb;border-radius:6px;font-size:0.85rem;color:#4b5563;text-decoration:none">← 검색으로 돌아가기</a>'
+        + '</div>';
+    });
 }
+
+(function() {
+  const regParam = decodeURIComponent(new URLSearchParams(location.search).get("reg") || "");
+  if (!loadFromLocalStorage()) {
+    if (regParam) {
+      loadFromApi(regParam);
+    } else {
+      document.getElementById("app").innerHTML =
+        '<div style="text-align:center;padding:80px 32px;color:#6b7280">'
+        + '<p style="font-size:1rem;margin-bottom:16px">데이터를 불러올 수 없습니다.<br>검색 페이지에서 규정을 다시 선택해 주세요.</p>'
+        + '<a href="search.html" style="display:inline-block;padding:8px 20px;border:1px solid #e5e7eb;border-radius:6px;font-size:0.85rem;color:#4b5563;text-decoration:none">← 검색으로 돌아가기</a>'
+        + '</div>';
+    }
+  }
+})()
 </script>
 </body>
 </html>

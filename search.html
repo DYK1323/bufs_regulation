@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>부산외국어대학교 규정 검색 시스템</title>
+<title>규정 검색 — 부산외국어대학교 규정관리시스템</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
 <style>
@@ -96,14 +96,8 @@
   .init-overlay p { font-size: 0.85rem; font-weight: 500; color: var(--ink-muted); }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* ── 홈 히어로 검색 ── */
-  .hero { text-align: center; padding: 60px 0 48px; }
-  .hero h1 {
-    font-size: 2.25rem; font-weight: 700; color: var(--navy);
-    margin-bottom: 12px; font-family: "Noto Sans KR", sans-serif;
-  }
-  .hero p { font-size: 1rem; color: var(--ink-muted); margin-bottom: 32px; }
-
+  /* ── 검색바 섹션 ── */
+  .search-section { padding: 40px 0 0; }
   .search-label { display: none; }
   .search-row {
     display: flex; align-items: center;
@@ -130,47 +124,10 @@
 
   .status-bar {
     font-size: 0.85rem; color: var(--ink-muted); font-weight: 500;
-    margin: 12px 0 16px; min-height: 18px; text-align: center;
+    margin: 20px 0 16px; min-height: 18px; text-align: center;
   }
 
-  /* ── 최근 개정 목록 ── */
-  .recent-section { margin-bottom: 48px; }
-  .section-header-row {
-    display: flex; align-items: center; justify-content: space-between;
-    padding-bottom: 12px; margin-bottom: 0;
-    border-bottom: 2px solid var(--border);
-    margin-bottom: 0;
-  }
-  .section-header-row h2 { font-size: 1.25rem; font-weight: 700; color: var(--ink); font-family: "Noto Sans KR", sans-serif; }
-  .section-header-row span { font-size: 0.82rem; color: var(--ink-muted); }
-
-  .recent-list { display: flex; flex-direction: column; }
-  .recent-item {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 24px; border-bottom: 1px solid var(--border);
-    border-top: 1px solid var(--border); margin-top: -1px;
-    cursor: pointer; transition: background 0.12s; gap: 16px;
-  }
-  .recent-item:hover { background: rgba(0,0,0,0.025); }
-  .recent-item-left { display: flex; align-items: center; gap: 10px; flex: 1; }
-  .recent-item-icon { width: 16px; height: 16px; color: var(--ink-muted); flex-shrink: 0; }
-  .recent-item-name { font-size: 0.9rem; color: var(--ink); }
-  .recent-item-name:hover { color: var(--navy); }
-  .recent-item-date { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--ink-muted); white-space: nowrap; flex-shrink: 0; }
-  .recent-item-date svg { width: 14px; height: 14px; }
-
-  .show-more-row {
-    padding: 14px; text-align: center;
-    background: rgba(0,0,0,0.015); border-bottom: 1px solid var(--border); margin-top: -1px;
-  }
-  .show-more-btn {
-    background: none; border: none; cursor: pointer;
-    font-size: 0.85rem; color: var(--navy); font-weight: 500; font-family: inherit;
-    transition: opacity 0.15s;
-  }
-  .show-more-btn:hover { opacity: 0.75; }
-
-  /* ── 검색 결과 ── */
+  /* ── 결과 영역 ── */
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(8px); }
     to   { opacity: 1; transform: translateY(0); }
@@ -315,34 +272,28 @@
       <a href="category.html?cat=5">부속기관</a>
       <a href="category.html?cat=6">기타</a>
     </nav>
-    <form class="header-search-form" onsubmit="event.preventDefault(); goSearch(document.getElementById('kwHeader').value);">
+    <form class="header-search-form" onsubmit="event.preventDefault(); doSearchFromInput(document.getElementById('kwHeader').value);">
       <svg class="header-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-      <input id="kwHeader" class="header-search-input" type="text" placeholder="규정 검색..." autocomplete="off">
+      <input id="kwHeader" class="header-search-input" type="text" placeholder="규정 검색..." autocomplete="off" disabled>
     </form>
   </div>
 </header>
 
 <div class="page-wrap">
-  <!-- 히어로 검색 -->
-  <div class="hero">
-    <h1>규정 검색하기</h1>
-    <p>부산외국어대학교의 모든 규정을 검색하고 조회할 수 있습니다</p>
+  <!-- 검색바 -->
+  <div class="search-section">
     <label class="search-label" for="kw">키워드 입력</label>
-    <form class="search-row" onsubmit="event.preventDefault(); goSearch(document.getElementById('kw').value);">
+    <form class="search-row" onsubmit="event.preventDefault(); doSearchFromInput(document.getElementById('kw').value);">
       <input id="kw" class="search-input" type="text"
              placeholder="규정명, 키워드로 검색하세요..."
-             autocomplete="off">
-      <button class="search-btn" type="submit">검색</button>
+             autocomplete="off" disabled
+             oninput="document.getElementById('kwHeader').value=this.value">
+      <button class="search-btn" id="searchBtn" type="submit" disabled>검색</button>
     </form>
   </div>
 
-  <div id="recentSection" class="recent-section" style="display:none">
-    <div class="section-header-row">
-      <h2>최근 개정된 규정</h2>
-      <span id="recentCount"></span>
-    </div>
-    <div class="recent-list" id="recentList"></div>
-  </div>
+  <div class="status-bar" id="statusBar"></div>
+  <div id="results"></div>
 
   <footer class="site-footer">
     규정 본문 기준 전문 검색 &nbsp;·&nbsp; record_status = active 행만 포함
@@ -369,20 +320,39 @@
 </div>
 
 <script>
+let ALL_ROWS         = [];
+let ALL_AMENDMENTS   = [];
 const SCRIPT_URL     = "https://script.google.com/macros/s/AKfycbx5Sqkb3yN1yPqmjSLv_9JIFUuyEvEqVA0Lw6s4OlLwUwtmRj1zMz7NXAautTuzngbg/exec";
 let REG_META_MAP     = {};
 let REG_LIST         = [];
-let RECENT_AMENDMENTS = [];
 
 // ── 유틸 ─────────────────────────────────────────────────────
+function buildArticleNo(raw) {
+  if (!raw) return "";
+  const s = String(raw).trim();
+  if (s.includes("_")) { const p = s.split("_"); return "제" + p[0] + "조의" + p[1]; }
+  return "제" + s + "조";
+}
+const CIRCLED = ["","①","②","③","④","⑤","⑥","⑦","⑧","⑨","⑩",
+                 "⑪","⑫","⑬","⑭","⑮","⑯","⑰","⑱","⑲","⑳"];
+function circle(n) { return CIRCLED[parseInt(n)] || String(n); }
 function escHtml(s) {
   return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
 }
-
-function goSearch(kw) {
-  kw = (kw || "").trim();
-  if (!kw) return;
-  location.href = "search.html?q=" + encodeURIComponent(kw);
+function highlight(text, kw) {
+  if (!kw) return escHtml(text);
+  const esc = kw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  return escHtml(text).replace(new RegExp(esc,"gi"), m => "<mark>" + m + "</mark>");
+}
+function highlightHtml(text, kw) {
+  if (!kw) return text;
+  const esc = kw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  return text.replace(new RegExp(esc,"gi"), m => "<mark>" + m + "</mark>");
+}
+function amendLabel(name) {
+  const m = REG_META_MAP[name] || {};
+  if (!m.lastAmendDate) return "";
+  return (m.lastAmendType ? m.lastAmendType + " " : "") + m.lastAmendDate;
 }
 
 // ── 초기 데이터 로드 ─────────────────────────────────────────
@@ -390,15 +360,27 @@ function initData() {
   fetch(SCRIPT_URL + "?action=data")
     .then(response => response.json())
     .then(data => {
-      REG_META_MAP      = data.regMeta          || {};
-      REG_LIST          = data.regList          || [];
-      RECENT_AMENDMENTS = data.recentAmendments || [];
+      ALL_ROWS       = data.rows       || [];
+      ALL_AMENDMENTS = data.amendments || [];
+      REG_META_MAP   = data.regMeta    || {};
+      REG_LIST       = data.regList    || [];
 
-      // localStorage에 regList 저장 (category.html에서 사용)
       try { localStorage.setItem("regList", JSON.stringify(REG_LIST)); } catch(e) {}
 
+      document.getElementById("kw").disabled = false;
+      document.getElementById("searchBtn").disabled = false;
+      document.getElementById("kwHeader").disabled = false;
       document.getElementById("initOverlay").classList.add("hidden");
-      renderRecentAmendments();
+
+      // URL에 q 파라미터가 있으면 자동 검색
+      const q = decodeURIComponent(new URLSearchParams(location.search).get("q") || "").trim();
+      if (q) {
+        document.getElementById("kw").value = q;
+        document.getElementById("kwHeader").value = q;
+        doSearch(q);
+      } else {
+        document.getElementById("kw").focus();
+      }
     })
     .catch(err => {
       const overlay = document.getElementById("initOverlay");
@@ -409,46 +391,181 @@ function initData() {
     });
 }
 
+// ── 검색 진입점 ──────────────────────────────────────────────
+function doSearchFromInput(kw) {
+  kw = (kw || "").trim();
+  if (!kw) return;
+  document.getElementById("kw").value = kw;
+  document.getElementById("kwHeader").value = kw;
+  history.replaceState(null, "", "search.html?q=" + encodeURIComponent(kw));
+  doSearch(kw);
+}
 
-function renderRecentAmendments() {
-  if (!RECENT_AMENDMENTS.length) return;
-  const section = document.getElementById("recentSection");
-  const list    = document.getElementById("recentList");
-  const countEl = document.getElementById("recentCount");
-  if (countEl) countEl.textContent = "총 " + RECENT_AMENDMENTS.length;
+// ── 브라우저 내 검색 ─────────────────────────────────────────
+function doSearch(kw) {
+  if (!kw) return;
+  const kwLower = kw.toLowerCase();
 
-  const SHOW_INIT = 10;
-  let showAll = false;
+  // ── 규정명 검색 ──────────────────────────────────────────
+  const regNames   = [...new Set(ALL_ROWS.map(r => r.regulationName))];
+  const regMatches = regNames
+    .filter(name => name.toLowerCase().includes(kwLower))
+    .map(name => ({
+      regulationName : name,
+      lastAmendLabel : amendLabel(name)
+    }));
 
-  function buildList() {
-    const items = showAll ? RECENT_AMENDMENTS : RECENT_AMENDMENTS.slice(0, SHOW_INIT);
-    const iconSvg = '<svg class="recent-item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>';
-    const calSvg  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>';
-    let html = items.map(item => {
-      const nameEsc = item.regulationName.replace(/\\/g,"\\\\").replace(/'/g,"\\'");
-      return '<div class="recent-item" onclick="openFullPage(\'' + nameEsc + '\')">'
-        + '<div class="recent-item-left">' + iconSvg + '<span class="recent-item-name">' + escHtml(item.regulationName) + '</span></div>'
-        + '<div class="recent-item-date">' + calSvg + escHtml(item.amendDate || "") + '</div>'
-        + '</div>';
-    }).join("");
-    if (!showAll && RECENT_AMENDMENTS.length > SHOW_INIT) {
-      const more = RECENT_AMENDMENTS.length - SHOW_INIT;
-      html += '<div class="show-more-row"><button class="show-more-btn" id="showMoreBtn">더보기 (' + more + '개 더 있음)</button></div>';
+  // ── 조문 내용 검색 ────────────────────────────────────────
+  const seen           = new Set();
+  const articleMatches = [];
+
+  ALL_ROWS.forEach(r => {
+    if (!r.content.toLowerCase().includes(kwLower)) return;
+    const key = r.regulationName + "||" + r.articleNo;
+    if (seen.has(key)) return;
+    seen.add(key);
+
+    const articleRows = ALL_ROWS.filter(x =>
+      x.regulationName === r.regulationName &&
+      x.articleNo      === r.articleNo
+    ).sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+
+    articleMatches.push({
+      regulationName : r.regulationName,
+      lastAmendLabel : amendLabel(r.regulationName),
+      effDate        : (function(m){ return m.lastEffDate || m.lastAmendDate || ""; })(REG_META_MAP[r.regulationName] || {}),
+      articleNo      : r.articleNo,
+      articleTitle   : r.articleTitle,
+      articleRows    : articleRows,
+    });
+  });
+
+  articleMatches.sort((a, b) => {
+    const nc = a.regulationName.localeCompare(b.regulationName, "ko");
+    if (nc !== 0) return nc;
+    return a.articleNo.localeCompare(b.articleNo);
+  });
+
+  // ── 상태바 ────────────────────────────────────────────────
+  const parts = [];
+  if (regMatches.length)     parts.push("규정 " + regMatches.length + "건");
+  if (articleMatches.length) parts.push("조문 " + articleMatches.length + "건");
+  document.getElementById("statusBar").textContent =
+    parts.length > 0
+      ? '"' + kw + '" 검색 결과 — ' + parts.join(", ")
+      : '';
+
+  renderResults(regMatches, articleMatches, kw);
+}
+
+function renderArticleBody(articleRows, kw) {
+  const paraCount = articleRows.filter(r => r.paragraphNo && !r.itemNo).length;
+  let html = "";
+  articleRows.forEach(r => {
+    if (r.subitemNo) {
+      html += '<span class="subitem-line">' + escHtml(String(r.subitemNo).replace(/\.+$/, "")) + ".&nbsp;" + highlightHtml(r.content, kw) + '</span>';
+    } else if (r.itemNo) {
+      html += '<span class="item-line">' + escHtml(String(r.itemNo).replace(/\.+$/, "")) + ".&nbsp;" + highlightHtml(r.content, kw) + '</span>';
+    } else if (r.paragraphNo) {
+      html += '<span class="para-line">'
+            + (paraCount > 1 ? circle(r.paragraphNo) + "&nbsp;" : "")
+            + highlightHtml(r.content, kw) + '</span>';
     }
-    list.innerHTML = html;
-    if (!showAll && RECENT_AMENDMENTS.length > SHOW_INIT) {
-      document.getElementById("showMoreBtn").addEventListener("click", function() {
-        showAll = true; buildList();
-      });
-    }
+  });
+  return html;
+}
+
+function renderResults(regMatches, articleMatches, kw) {
+  const el = document.getElementById("results");
+
+  if (!regMatches.length && !articleMatches.length) {
+    el.innerHTML =
+      '<div class="no-result"><span class="icon">🔍</span>'
+      + '<p><strong>"' + escHtml(kw) + '"</strong>에 해당하는 규정 또는 조문이 없습니다.</p></div>';
+    return;
   }
-  buildList();
-  section.style.display = "";
+
+  let html = "";
+
+  const iconSvg = '<svg style="width:15px;height:15px;flex-shrink:0;color:#9ca3af" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>';
+
+  // ── 규정 섹션 ────────────────────────────────────────────
+  if (regMatches.length) {
+    html += '<div class="section-head">규정 <strong>' + regMatches.length + '건</strong></div>';
+    html += '<div class="reg-cards">';
+    regMatches.forEach(item => {
+      const regEsc = item.regulationName.replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+      const meta   = REG_META_MAP[item.regulationName] || {};
+      const pdfUrl = meta.pdfUrl || "";
+      html +=
+        '<div class="reg-card" onclick="openFullPage(\'' + regEsc + '\')" title="전문 보기">'
+        + '<div class="reg-card-left">' + iconSvg
+        + '<span class="reg-card-name">' + highlight(item.regulationName, kw) + '</span></div>'
+        + '<div class="reg-card-right">'
+        + (item.lastAmendLabel ? '<span class="reg-card-date">' + escHtml(item.lastAmendLabel) + '</span>' : '')
+        + (pdfUrl ? '<a class="reg-card-pdf" href="' + escHtml(pdfUrl) + '" target="_blank" onclick="event.stopPropagation()">PDF ↗</a>' : '')
+        + '</div>'
+        + '</div>';
+    });
+    html += '</div>';
+  }
+
+  // ── 조문 섹션 ────────────────────────────────────────────
+  if (articleMatches.length) {
+    html += '<div class="section-head"' + (regMatches.length ? ' style="margin-top:32px"' : '') + '>'
+          + '조문 <strong>' + articleMatches.length + '건</strong></div>';
+    html += '<p class="click-hint">행을 클릭하면 해당 규정 전문이 열립니다</p>';
+
+    let rows    = "";
+    let prevReg = null;
+
+    articleMatches.forEach(item => {
+      const isGroupStart = item.regulationName !== prevReg;
+      prevReg = item.regulationName;
+      const artNo    = buildArticleNo(item.articleNo);
+      const artTitle = item.articleTitle ? artNo + "(" + item.articleTitle + ")" : artNo;
+      const body     = renderArticleBody(item.articleRows, kw);
+      const regEsc   = item.regulationName.replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+
+      rows +=
+        '<tr' + (isGroupStart ? ' class="group-start"' : '')
+        + ' onclick="openFullPage(\'' + regEsc + '\')" title="클릭하면 전문 보기">'
+        + '<td class="cell-reg">' + (isGroupStart ? escHtml(item.regulationName) : "") + '</td>'
+        + '<td class="cell-date">' + (isGroupStart ? escHtml(item.effDate) : "") + '</td>'
+        + '<td class="cell-cont">'
+        + '<div class="art-title">' + escHtml(artTitle) + '</div>'
+        + '<div class="art-body">' + body + '</div>'
+        + '</td></tr>';
+    });
+
+    html += '<div class="result-table-wrap"><table class="result-table">'
+          + '<thead><tr>'
+          + '<th class="col-reg">규정명</th>'
+          + '<th class="col-date">시행일</th>'
+          + '<th class="col-cont">내용</th>'
+          + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+
+  el.innerHTML = html;
 }
 
 function openFullPage(regulationName) {
   localStorage.setItem("targetRegulation", regulationName);
-  location.href = "full.html?reg=" + encodeURIComponent(regulationName);
+  const regRows = ALL_ROWS.filter(r => r.regulationName === regulationName);
+  const amends  = ALL_AMENDMENTS
+    .filter(a => a.regulationName === regulationName)
+    .sort((a, b) => a.seq - b.seq);
+  const meta    = REG_META_MAP[regulationName] || {};
+
+  localStorage.setItem("fullRegData", JSON.stringify({
+    regulationName,
+    rows: regRows,
+    amendments: amends,
+    pdfUrl: meta.pdfUrl || "",
+    meta
+  }));
+
+  location.href = "full.html";
 }
 
 // ── 관리자 모달 ──────────────────────────────────────────────
@@ -490,6 +607,7 @@ function confirmClear() {
           document.getElementById("initMsg").textContent = "최신 데이터를 불러오는 중입니다…";
           document.getElementById("kw").disabled = true;
           document.getElementById("searchBtn").disabled = true;
+          document.getElementById("kwHeader").disabled = true;
           ALL_ROWS = []; ALL_AMENDMENTS = []; REG_META_MAP = {};
           initData();
         }, 1200);
