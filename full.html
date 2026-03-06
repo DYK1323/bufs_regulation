@@ -338,20 +338,20 @@ function renderFull(data) {
     let lines = "";
     art.rows.forEach(r => {
       const ct = r.changeType || "";
-      const cd = r.changeDate || "";
+      // 행별 revision_dates 우선, 없으면 단일 changeType/changeDate로 fallback
       let anno = "";
-      if (cd && ART_LEVEL_TYPES.indexOf(ct) < 0 && ct !== "신규") {
-        if (ct === "삭제") anno = '<span class="anno-del">&lt;' + escHtml(cd) + '&gt;</span>';
-        else if (ct) anno = '<span class="anno-rev">(' + escHtml(ct) + ' ' + escHtml(cd) + ')</span>';
+      if (r.revisionDates) {
+        anno = '<span class="anno-rev">' + escHtml(r.revisionDates) + '</span>';
+      } else if (r.changeDate && ART_LEVEL_TYPES.indexOf(ct) < 0 && ct && ct !== "신규") {
+        if (ct === "삭제") anno = '<span class="anno-del">&lt;' + escHtml(r.changeDate) + '&gt;</span>';
+        else anno = '<span class="anno-rev">(' + escHtml(ct) + ' ' + escHtml(r.changeDate) + ')</span>';
       }
       if (r.subitemNo) lines += '<span class="subitem-line">' + escHtml(String(r.subitemNo).replace(/\.+$/, "")) + ".&nbsp;" + allowHtml(r.content) + anno + '</span>';
       else if (r.itemNo) lines += '<span class="item-line">' + escHtml(r.itemNo) + ".&nbsp;" + allowHtml(r.content) + anno + '</span>';
       else if (r.paragraphNo) lines += '<span class="para-line">' + (paraCount > 1 ? circle(r.paragraphNo) + "&nbsp;" : "") + allowHtml(r.content) + anno + '</span>';
     });
 
-    const revDates = (art.rows[0] && art.rows[0].revisionDates) || "";
-    const revDatesHtml = revDates ? '<div class="art-rev-dates">' + escHtml(revDates) + '</div>' : '';
-    bodyHtml += '<div class="article" id="' + artAnchorId(art.articleNo) + '">' + '<div class="article-title">' + escHtml(artNo + artTitle) + '</div>' + '<div class="article-body">' + lines + '</div>' + artLevelAnno + revDatesHtml + '</div>';
+    bodyHtml += '<div class="article" id="' + artAnchorId(art.articleNo) + '">' + '<div class="article-title">' + escHtml(artNo + artTitle) + '</div>' + '<div class="article-body">' + lines + '</div>' + artLevelAnno + '</div>';
   });
 
   let amendHtml = "";

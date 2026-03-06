@@ -263,15 +263,19 @@ function syncArticle_() {
 
   const artRevMap = {};
   for (let i = 1; i < ahData.length; i++) {
-    const r     = ahData[i];
-    const regId = String(r[c("reg_id")]      || "").trim();
-    const artNo = safeArticleNo(r[c("article_no")]);
-    const ctype = String(r[c("change_type")] || "").trim();
-    const cdate = formatDate(r[c("change_date")]);   // Date 객체도 정규화
+    const r      = ahData[i];
+    const regId  = String(r[c("reg_id")]      || "").trim();
+    const artNo  = safeArticleNo(r[c("article_no")]);
+    const ctype  = String(r[c("change_type")] || "").trim();
+    const cdate  = formatDate(r[c("change_date")]);
+    const paraNo = String(c("paragraph_no") >= 0 ? (r[c("paragraph_no")] || "") : "").trim();
+    const itemNo = String(r[c("item_no")]    || "").trim();
+    const subNo  = String(r[c("subitem_no")] || "").trim();
 
     if (!regId || !artNo || !ctype || !cdate) continue;
 
-    const key = regId + "||" + artNo;
+    // 항/호/목 단위로 집계 (행 수준 revision_dates)
+    const key = regId + "||" + artNo + "||" + paraNo + "||" + itemNo + "||" + subNo;
     if (!artRevMap[key]) artRevMap[key] = {};
     if (!artRevMap[key][ctype]) artRevMap[key][ctype] = [];
     if (artRevMap[key][ctype].indexOf(cdate) < 0) artRevMap[key][ctype].push(cdate);
@@ -307,9 +311,12 @@ function syncArticle_() {
     const status = c("record_status") >= 0 ? String(r[c("record_status")] || "").trim() : "active";
     if (status !== "active") continue;
 
-    const regId = String(r[c("reg_id")] || "").trim();
-    const artNo = safeArticleNo(r[c("article_no")]);
-    const key   = regId + "||" + artNo;
+    const regId  = String(r[c("reg_id")] || "").trim();
+    const artNo  = safeArticleNo(r[c("article_no")]);
+    const paraNo = String(c("paragraph_no") >= 0 ? (r[c("paragraph_no")] || "") : "").trim();
+    const itemNo = String(r[c("item_no")]    || "").trim();
+    const subNo  = String(r[c("subitem_no")] || "").trim();
+    const key    = regId + "||" + artNo + "||" + paraNo + "||" + itemNo + "||" + subNo;
 
     out.push([
       regId,
