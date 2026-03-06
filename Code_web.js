@@ -57,26 +57,33 @@ function getAllData() {
   const cachedAmend = cache.get(CACHE_KEY_AMEND);
   const cachedMeta  = cache.get("regulation_meta");
 
+  const cachedRegList   = cache.get("regulation_list");
+  const cachedRecent    = cache.get("recent_amendments");
+
   if (cachedReg && cachedAmend) {
     return {
-      rows       : JSON.parse(cachedReg),
-      amendments : JSON.parse(cachedAmend),
-      regMeta    : cachedMeta ? JSON.parse(cachedMeta) : {},
-      fromCache  : true
+      rows             : JSON.parse(cachedReg),
+      amendments       : JSON.parse(cachedAmend),
+      regMeta          : cachedMeta     ? JSON.parse(cachedMeta)     : {},
+      regList          : cachedRegList  ? JSON.parse(cachedRegList)  : [],
+      recentAmendments : cachedRecent   ? JSON.parse(cachedRecent)   : [],
+      fromCache        : true
     };
   }
 
   const data = loadFromSheet();
 
   try {
-    cache.put(CACHE_KEY_REG,     JSON.stringify(data.rows),       CACHE_EXPIRY);
-    cache.put(CACHE_KEY_AMEND,   JSON.stringify(data.amendments), CACHE_EXPIRY);
-    cache.put("regulation_meta", JSON.stringify(data.regMeta),    CACHE_EXPIRY);
+    cache.put(CACHE_KEY_REG,       JSON.stringify(data.rows),             CACHE_EXPIRY);
+    cache.put(CACHE_KEY_AMEND,     JSON.stringify(data.amendments),       CACHE_EXPIRY);
+    cache.put("regulation_meta",   JSON.stringify(data.regMeta),          CACHE_EXPIRY);
+    cache.put("regulation_list",   JSON.stringify(data.regList),          CACHE_EXPIRY);
+    cache.put("recent_amendments", JSON.stringify(data.recentAmendments), CACHE_EXPIRY);
   } catch(e) {
     Logger.log("캐시 저장 실패: " + e.message);
   }
 
-  return { rows: data.rows, amendments: data.amendments, regMeta: data.regMeta, fromCache: false };
+  return { rows: data.rows, amendments: data.amendments, regMeta: data.regMeta, regList: data.regList, recentAmendments: data.recentAmendments, fromCache: false };
 }
 
 // ================================================================
@@ -91,15 +98,23 @@ function loadFromSheet() {
   const regIdToName = {};
   const regMeta     = {};
 
+  const regList = []; // 카테고리 포함 전체 규정 목록
+
   if (regRaw.length >= 2) {
-    const rh       = regRaw[0].map(h => String(h).toLowerCase().trim());
-    const iRId     = rh.indexOf("reg_id");
-    const iRName   = rh.indexOf("reg_name");
-    const iPdfUrl  = rh.indexOf("pdf_url");
-    const iEnact   = rh.indexOf("enacted_date");
-    const iRevised = rh.indexOf("revised_date");
-    const iEff     = rh.indexOf("effective_date");
-    const rg       = (r, i) => i >= 0 ? r[i] : "";
+    const rh        = regRaw[0].map(h => String(h).toLowerCase().trim());
+    const iRId      = rh.indexOf("reg_id");
+    const iRName    = rh.indexOf("reg_name");
+    const iPdfUrl   = rh.indexOf("pdf_url");
+    const iEnact    = rh.indexOf("enacted_date");
+    const iRevised  = rh.indexOf("revised_date");
+    const iEff      = rh.indexOf("effective_date");
+    const iCatNo    = rh.indexOf("category_no");
+    const iCat      = rh.indexOf("category");
+    const iCatSubNo = rh.indexOf("category_sub_no");
+    const iCatSub   = rh.indexOf("category_sub");
+    const iStatus   = rh.indexOf("status");
+    const iDept     = rh.indexOf("dept");
+    const rg        = (r, i) => i >= 0 ? r[i] : "";
 
     if (iRId >= 0 && iRName >= 0) {
       regRaw.slice(1).forEach(r => {
@@ -107,13 +122,32 @@ function loadFromSheet() {
         const regName = String(rg(r, iRName) || "").trim();
         if (!regId || !regName) return;
         regIdToName[regId] = regName;
+        const revisedDate = String(rg(r, iRevised) || "").trim();
         regMeta[regName] = {
           pdfUrl        : String(rg(r, iPdfUrl)  || "").trim(),
           enactDate     : String(rg(r, iEnact)   || "").trim(),
-          lastAmendDate : String(rg(r, iRevised) || "").trim(),
+          lastAmendDate : revisedDate,
           lastAmendType : "",
           lastEffDate   : String(rg(r, iEff)     || "").trim(),
+          categoryNo    : String(rg(r, iCatNo)   || "").trim(),
+          category      : String(rg(r, iCat)     || "").trim(),
+          categorySubNo : String(rg(r, iCatSubNo)|| "").trim(),
+          categorySub   : String(rg(r, iCatSub)  || "").trim(),
+          status        : String(rg(r, iStatus)  || "").trim(),
+          dept          : String(rg(r, iDept)    || "").trim(),
         };
+        regList.push({
+          regId,
+          regName,
+          revisedDate,
+          categoryNo    : String(rg(r, iCatNo)   || "").trim(),
+          category      : String(rg(r, iCat)     || "").trim(),
+          categorySubNo : String(rg(r, iCatSubNo)|| "").trim(),
+          categorySub   : String(rg(r, iCatSub)  || "").trim(),
+          status        : String(rg(r, iStatus)  || "").trim(),
+          dept          : String(rg(r, iDept)    || "").trim(),
+          pdfUrl        : String(rg(r, iPdfUrl)  || "").trim(),
+        });
       });
     }
   }
@@ -196,7 +230,20 @@ function loadFromSheet() {
     });
   }
 
-  return { rows, amendments, regMeta };
+  // ── 4. history 시트 → 최근 개정 목록 (round_id 내림차순, 규정별 최신 1건) ─
+  const recentAmendments = [];
+  {
+    // amendments 이미 로드됨; round_id(seq) 내림차순 정렬 후 규정별 최신 1건 추출
+    const seen = {};
+    const sorted = amendments.slice().sort((a, b) => b.seq - a.seq);
+    sorted.forEach(a => {
+      if (seen[a.regulationName]) return;
+      seen[a.regulationName] = true;
+      recentAmendments.push({ regulationName: a.regulationName, amendDate: a.amendDate });
+    });
+  }
+
+  return { rows, amendments, regMeta, regList, recentAmendments };
 }
 
 // ================================================================
@@ -370,6 +417,8 @@ function clearCacheWithPassword(password) {
     cache.remove(CACHE_KEY_REG);
     cache.remove(CACHE_KEY_AMEND);
     cache.remove("regulation_meta");
+    cache.remove("regulation_list");
+    cache.remove("recent_amendments");
 
     return {
       success: true,
