@@ -282,7 +282,8 @@ function syncArticle_() {
     if (typeMap["삭제"] && typeMap["삭제"].length > 0) {
       return "<" + typeMap["삭제"].sort()[0] + ">";
     }
-    const ORDER = ["신설", "본조신설", "전부개정", "개정"];
+    // 본조신설/전부개정은 full.html의 artLevelAnno에서 조 수준으로 따로 표시
+    const ORDER = ["신설", "개정"];
     const parts = [];
     for (let ti = 0; ti < ORDER.length; ti++) {
       const ctype = ORDER[ti];
