@@ -418,31 +418,30 @@ function formatDateVal(v) {
 // ── 초기 데이터 로드 ─────────────────────────────────────────
 function initData() {
   Promise.all([
-    fetchSheet("regulation_meta"),
+    fetchSheet("regulations"),
     fetchSheet("article_history"),
-    fetchSheet("Amendment_DB")
+    fetchSheet("history")
   ]).then(([regRows, artRows, histRows]) => {
-    // regulation_meta
+    // regulations 시트
     const regIdToName = {};
     REG_META_MAP = {};
     regRows.forEach(r => {
-      const id = String(r["regulation_code"]||r["reg_id"]||"").trim();
-      const name = String(r["regulation_name"]||r["reg_name"]||"").trim();
+      const id = String(r["reg_id"]||"").trim();
+      const name = String(r["reg_name"]||"").trim();
       if (!id||!name) return;
       regIdToName[id] = name;
       REG_META_MAP[name] = {
-        pdfUrl        : String(r["pdf_url"]||"").trim(),
-        enactDate     : formatDateVal(r["enact_date"]),
-        lastAmendDate : formatDateVal(r["last_amend_date"]),
-        lastAmendType : String(r["last_amend_type"]||"").trim(),
-        lastEffDate   : formatDateVal(r["last_effect_date"]),
+        pdfUrl        : "",
+        enactDate     : formatDateVal(r["enacted_date"]),
+        lastAmendDate : formatDateVal(r["revised_date"]),
+        lastAmendType : String(r["change_type"]||"").trim(),
+        lastEffDate   : formatDateVal(r["effective_date"]),
       };
     });
 
     // article_history 시트 (record_status=active만)
     ALL_ROWS = artRows.filter(r => String(r["record_status"]||"active").trim() === "active").map(r => ({
-      regulationName : regIdToName[String(r["regulation_code"]||"").trim()]
-                    || String(r["regulation_name"]||"").trim(),
+      regulationName : regIdToName[String(r["reg_id"]||"").trim()],
       chapter        : String(r["chapter"]||"").trim(),
       chapterTitle   : String(r["chapter_title"]||"").trim(),
       section        : String(r["section"]||"").trim(),
@@ -455,17 +454,17 @@ function initData() {
       content        : String(r["content"]||""),
       sortKey        : String(r["sort_key"]||"").trim(),
       changeType     : String(r["change_type"]||"").trim(),
-      version_no     : r["version_no"],
+      version        : r["version"],
     }));
 
-    // Amendment_DB
+    // history 시트
     ALL_AMENDMENTS = histRows.map(r => ({
-      regulationName : regIdToName[String(r["regulation_code"]||"").trim()]
-                    || String(r["regulation_name"]||"").trim(),
-      seq            : Number(r["amendment_seq"]) || 0,
-      amendDate      : String(r["amendment_date"]||"").trim(),
-      amendType      : String(r["amendment_type"]||"").trim(),
-      effectDate     : String(r["effective_date"]||"").trim(),
+      regulationName : regIdToName[String(r["reg_id"]||"").trim()]
+                    || String(r["reg_name"]||"").trim(),
+      seq            : Number(r["version"]) || 0,
+      amendDate      : String(r["change_date"]||"").trim(),
+      amendType      : String(r["change_type"]||"").trim(),
+      effectDate     : "",
       content        : String(r["content"]||""),
     }));
 
