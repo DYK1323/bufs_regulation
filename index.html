@@ -246,6 +246,23 @@
     margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border);
     font-size: 0.75rem; color: var(--ink-muted); text-align: center; font-weight: 500;
   }
+  .art-body table{
+  border-collapse:collapse;
+  margin:10px 0;
+  font-size:0.85rem;
+}
+
+.art-body th,
+.art-body td{
+  border:1px solid #d1d5db;
+  padding:3px 8px;
+  text-align:center;
+}
+
+.art-body th{
+  background:#f3f4f6;
+  font-weight:600;
+}
 </style>
 </head>
 <body>
@@ -324,6 +341,11 @@ function highlight(text, kw) {
   if (!kw) return escHtml(text);
   const esc = kw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
   return escHtml(text).replace(new RegExp(esc,"gi"), m => "<mark>" + m + "</mark>");
+}
+function highlightHtml(text, kw) {
+  if (!kw) return text;   // HTML 그대로 출력
+  const esc = kw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  return text.replace(new RegExp(esc,"gi"), m => "<mark>" + m + "</mark>");
 }
 function amendLabel(name) {
   const m = REG_META_MAP[name] || {};
@@ -418,11 +440,11 @@ function renderArticleBody(articleRows, kw) {
   let html = "";
   articleRows.forEach(r => {
     if (r.itemNo) {
-      html += '<span class="item-line">' + escHtml(r.itemNo) + ".&nbsp;" + highlight(r.content, kw) + '</span>';
+      html += '<span class="item-line">' + escHtml(r.itemNo) + ".&nbsp;" + highlightHtml(r.content, kw) + '</span>';
     } else if (r.paragraphNo) {
       html += '<span class="para-line">'
             + (paraCount > 1 ? circle(r.paragraphNo) + "&nbsp;" : "")
-            + highlight(r.content, kw) + '</span>';
+            + highlightHtml(r.content, kw) + '</span>';
     }
   });
   return html;

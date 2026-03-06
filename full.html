@@ -133,6 +133,37 @@
    background-size: 200% 100%; animation: skeleton-loading 1.5s infinite;
   }
   @keyframes skeleton-loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+  /* 본문 표 스타일 추가 */
+.article-body table{
+  border-collapse:collapse;
+  width:100%;
+  margin:14px 0;
+  font-size:0.9rem;
+}
+
+.article-body th,
+.article-body td{
+  border:1px solid #e5e7eb;
+  padding:4px 8px;
+  text-align:center;
+  line-height:1.4;
+}
+
+.article-body th{
+  background:#f8fafc;
+  font-weight:700;
+  color:#374151;
+}
+
+.article-body tr:nth-child(even){
+  background:#fafafa;
+}
+
+.article-body tr:hover{
+  background:#f1f5f9;
+}
+
 </style>
 </head>
 <body>
@@ -168,6 +199,14 @@ function buildArticleNo(raw) {
   const s = String(raw).trim();
   if (s.includes("_")) { const p = s.split("_"); return "제" + p[0] + "조의" + p[1]; }
   return "제" + s + "조";
+}
+function allowHtml(s){
+  if(!s) return "";
+  return String(s)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/&lt;(\/?(table|tr|td|th|tbody|thead)[^&]*)&gt;/gi,"<$1>");
 }
 function buildChapterNo(s) { if (!s) return ""; return "제" + s + (s.includes("의") ? "" : "장"); }
 function buildSectionNo(s) { if (!s) return ""; return "제" + s + (s.includes("의") ? "" : "절"); }
@@ -303,8 +342,8 @@ function renderFull(data) {
         if (ct === "삭제") anno = '<span class="anno-del">&lt;' + escHtml(cd) + '&gt;</span>';
         else if (ct) anno = '<span class="anno-rev">(' + escHtml(ct) + ' ' + escHtml(cd) + ')</span>';
       }
-      if (r.itemNo) lines += '<span class="item-line">' + escHtml(r.itemNo) + ".&nbsp;" + escHtml(r.content) + anno + '</span>';
-      else if (r.paragraphNo) lines += '<span class="para-line">' + (paraCount > 1 ? circle(r.paragraphNo) + "&nbsp;" : "") + escHtml(r.content) + anno + '</span>';
+      if (r.itemNo) lines += '<span class="item-line">' + escHtml(r.itemNo) + ".&nbsp;" + allowHtml(r.content) + anno + '</span>';
+      else if (r.paragraphNo) lines += '<span class="para-line">' + (paraCount > 1 ? circle(r.paragraphNo) + "&nbsp;" : "") + allowHtml(r.content) + anno + '</span>';
     });
 
     bodyHtml += '<div class="article" id="' + artAnchorId(art.articleNo) + '">' + '<div class="article-title">' + escHtml(artNo + artTitle) + '</div>' + '<div class="article-body">' + lines + '</div>' + artLevelAnno + '</div>';
