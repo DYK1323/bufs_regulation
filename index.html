@@ -525,10 +525,12 @@ function doSearch() {
 }
 
 function renderArticleBody(articleRows, kw) {
-  const paraCount = articleRows.filter(r => r.paragraphNo && !r.itemNo).length;
+  const paraCount = articleRows.filter(r => r.paragraphNo && !r.itemNo && !r.subitemNo).length;
   let html = "";
   articleRows.forEach(r => {
-    if (r.itemNo) {
+    if (r.subitemNo) {
+      html += '<span class="subitem-line">' + escHtml(r.subitemNo) + ".&nbsp;" + highlightHtml(r.content, kw) + '</span>';
+    } else if (r.itemNo) {
       html += '<span class="item-line">' + escHtml(r.itemNo) + ".&nbsp;" + highlightHtml(r.content, kw) + '</span>';
     } else if (r.paragraphNo) {
       html += '<span class="para-line">'
@@ -615,7 +617,9 @@ function renderResults(regMatches, articleMatches, kw) {
 
 function openFullPage(regulationName) {
   localStorage.setItem("targetRegulation", regulationName);
-  const regRows = ALL_ROWS.filter(r => r.regulationName === regulationName);
+  const regRows = ALL_ROWS
+    .filter(r => r.regulationName === regulationName)
+    .sort((a, b) => a.sortKey.localeCompare(b.sortKey));
   const amends  = ALL_AMENDMENTS
     .filter(a => a.regulationName === regulationName)
     .sort((a, b) => a.seq - b.seq);

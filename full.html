@@ -297,7 +297,7 @@ let h = '<button class="back-btn" onclick="window.location.href=\'index.html\';"
 }
 
 function renderFull(data) {
-  const rows = data.rows || [];
+  const rows = (data.rows || []).slice().sort((a, b) => a.sortKey.localeCompare(b.sortKey));
   const amends = data.amendments || [];
   const articleMap = {};
   const articleOrder = [];
@@ -319,7 +319,7 @@ function renderFull(data) {
     const art = articleMap[key];
     const artNo = buildArticleNo(art.articleNo);
     const artTitle = art.articleTitle ? "(" + art.articleTitle + ")" : "";
-    const paraCount = art.rows.filter(r => r.paragraphNo && !r.itemNo).length;
+    const paraCount = art.rows.filter(r => r.paragraphNo && !r.itemNo && !r.subitemNo).length;
 
     if (art.chapter && art.chapter !== prevChapter) {
       bodyHtml += '<div class="chapter-header" id="' + chapAnchorId(art.chapter) + '">' + escHtml(buildChapterNo(art.chapter)) + '&nbsp;&nbsp;' + escHtml(art.chapterTitle) + '</div>';
@@ -332,7 +332,8 @@ function renderFull(data) {
 
     let lines = "";
     art.rows.forEach(r => {
-      if (r.itemNo) lines += '<span class="item-line">' + escHtml(r.itemNo) + ".&nbsp;" + allowHtml(r.content) + '</span>';
+      if (r.subitemNo) lines += '<span class="subitem-line">' + escHtml(r.subitemNo) + ".&nbsp;" + allowHtml(r.content) + '</span>';
+      else if (r.itemNo) lines += '<span class="item-line">' + escHtml(r.itemNo) + ".&nbsp;" + allowHtml(r.content) + '</span>';
       else if (r.paragraphNo) lines += '<span class="para-line">' + (paraCount > 1 ? circle(r.paragraphNo) + "&nbsp;" : "") + allowHtml(r.content) + '</span>';
     });
 
