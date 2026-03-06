@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>부산외국어대학교 규정 검색 시스템</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600;700&family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css");
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --primary:   #1B3A5C;
+    --primary-l: #2C5F8A;
+    --primary-p: #EDF2F7;
+    --ink:       #1A1A1A;
+    --ink-soft:  #4B5563;
+    --ink-muted: #6B7280;
+    --paper:     #FAFAF8;
+    --card:      #FFFFFF;
+    --accent:    #D4894A;
+    --mark-bg:   #FEF3C7;
+    --border:    #E5E7EB;
+    --success:   #059669;
+    --danger:    #DC2626;
+  }
+  html, body {
+    min-height: 100%;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Pretendard Variable", -apple-system, sans-serif;
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  .page-wrap { max-width: 1200px; margin: 0 auto; padding: 0 32px 80px; }
+
+  /* 헤더 (프로토타입 느낌으로 재해석) */
+.site-header {
+  padding: 48px 0 20px; /* 하단 패딩을 살짝 줄여 선에 밀착 */
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 32px;
+  display: flex; 
+  align-items: flex-end; /* 텍스트와 로고를 바닥선에 맞춤 */
+  justify-content: space-between;
+}
+
+.site-header h1 {
+  font-size: 1.75rem; 
+  font-weight: 800; 
+  letter-spacing: -0.5px; 
+  color: var(--primary);
+  line-height: 1.2; /* 행간 조절로 바닥선 밀착 도움 */
+}
+
+.site-header h1 span {
+  display: block; 
+  font-size: 0.75rem; 
+  font-weight: 600;
+  letter-spacing: 0.1em; 
+  color: var(--ink-muted);
+  text-transform: uppercase; 
+  margin-bottom: 5px;
+}
+
+.header-deco {
+  display: flex;
+  align-items: flex-end;
+}
+
+.header-deco img {
+  height: 45px; /* 로고 높이를 h1 글자 크기에 맞춰 조절 */
+  width: auto;
+  display: block;
+}
+  /* 초기 로딩 오버레이 */
+  .init-overlay {
+    position: fixed; inset: 0; background: rgba(250, 250, 248, 0.9);
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 14px;
+    z-index: 100; transition: opacity 0.4s; backdrop-filter: blur(4px);
+  }
+  .init-overlay.hidden { opacity: 0; pointer-events: none; }
+  .init-overlay .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid var(--border); border-top-color: var(--primary);
+    border-radius: 50%; animation: spin 0.8s linear infinite;
+  }
+  .init-overlay p { font-size: 0.85rem; font-weight: 500; color: var(--ink-muted); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* 검색 영역 */
+  .search-section { margin-bottom: 28px; display: flex; flex-direction: column; align-items: center; }
+  .search-label { display: none; }
+  .search-row {
+    display: flex; width: 100%; max-width: 640px;
+    border: 2px solid var(--primary); background: var(--card); 
+    border-radius: 12px; overflow: hidden;
+    box-shadow: 0 4px 24px rgba(27,58,92,0.08); transition: transform 0.2s;
+  }
+  .search-row:focus-within { transform: translateY(-1px); box-shadow: 0 8px 32px rgba(27,58,92,0.12); }
+  .search-input {
+    flex: 1; border: none; outline: none;
+    padding: 16px 20px; font-size: 0.95rem; font-weight: 500;
+    font-family: inherit; background: transparent; color: var(--ink);
+  }
+  .search-input::placeholder { color: #9CA3AF; font-weight: 400; }
+  .search-btn {
+    border: none; background: var(--primary); color: #fff;
+    padding: 0 32px; font-size: 0.95rem; font-weight: 600;
+    font-family: inherit; cursor: pointer; transition: background 0.15s; white-space: nowrap;
+  }
+  .search-btn:hover { background: var(--primary-l); }
+  .search-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .status-bar {
+    font-size: 0.85rem; color: var(--ink-muted); font-weight: 500;
+    margin-bottom: 16px; min-height: 18px; text-align: center;
+  }
+
+  /* 결과 테이블 공통 */
+  .result-table-wrap { 
+    width: 100%; animation: fadeUp 0.25s ease both;
+    background: var(--card); border-radius: 10px; border: 1px solid var(--border); overflow: hidden;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .result-table { width: 100%; border-collapse: collapse; font-size: 1.0rem; }
+  .result-table thead tr { background: var(--primary-p); color: var(--primary); }
+  .result-table thead th {
+    padding: 12px 16px; text-align: left;
+    font-weight: 600; font-size: 0.9rem; letter-spacing: 0.02em; white-space: nowrap;
+  }
+  .col-reg  { width: 220px; }
+  .col-date { width: 140px; }
+
+  .result-table tbody tr {
+    border-bottom: 1px solid var(--border);
+    cursor: pointer; transition: background 0.1s;
+  }
+  .result-table tbody tr:last-child { border-bottom: none; }
+  .result-table tbody tr:hover { background: #FAFCFF; }
+  .result-table tbody tr.group-start td { border-top: 1px solid var(--border); }
+  .result-table tbody tr:first-child td { border-top: none; }
+
+  .result-table tbody td {
+    padding: 14px 16px; vertical-align: top;
+    line-height: 1.6; color: var(--ink-soft);
+  }
+  .cell-reg { font-weight: 600; color: var(--ink) !important; font-size: 0.85rem; }
+  .cell-date { color: var(--ink-muted) !important; font-size: 0.82rem; text-align: left; }
+
+  .art-title { font-weight: 600; color: var(--primary-l); margin-bottom: 4px; font-size: 0.85rem; }
+  .art-body  { line-height: 1.7; font-size: 0.88rem; }
+  .para-line    { display: block; padding-left: 8px; }
+  .item-line    { display: block; padding-left: 24px; text-indent: -1.2em; }
+  .subitem-line { display: block; padding-left: 40px; text-indent: -1.2em; }
+
+  .click-hint { font-size: 0.75rem; color: var(--ink-muted); margin-bottom: 12px; font-weight: 500; }
+  .click-hint::before { content: "💡 "; }
+
+  mark { background: var(--mark-bg); color: inherit; padding: 0 4px; border-radius: 4px; font-weight: 600; }
+
+  .no-result { text-align: center; padding: 60px 0; color: var(--ink-muted); }
+  .no-result .icon { font-size: 2.2rem; display: block; margin-bottom: 12px; opacity: 0.8; }
+
+  /* 규정 카드 (프로토타입 스타일 적용) */
+  .section-head {
+    font-size: 0.85rem; font-weight: 700; color: var(--primary); 
+    padding-bottom: 8px; margin: 8px 0 16px; display: flex; align-items: center; gap: 8px;
+  }
+  .section-head strong { background: var(--primary); color: #fff; padding: 2px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+  
+  .reg-cards { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+  .reg-card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 16px 20px; display: flex; align-items: center; justify-content: space-between; gap: 24px;
+    cursor: pointer; transition: box-shadow 0.15s, transform 0.15s;
+  }
+  .reg-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); transform: translateY(-1px); }
+  .reg-card-name { font-weight: 700; font-size: 0.95rem; color: var(--ink); margin-bottom: 4px; }
+  .reg-card-date { font-size: 0.75rem; color: var(--ink-muted); font-weight: 500; }
+  .reg-card-btn  { font-size: 0.75rem; font-weight: 600; color: var(--primary); white-space: nowrap; flex-shrink: 0; }
+  
+  .reg-card-pdf {
+    display: inline-block; flex-shrink: 0; background: var(--primary-p); color: var(--primary);
+    border-radius: 6px; padding: 4px 10px; font-size: 0.72rem; font-weight: 600;
+    text-decoration: none; white-space: nowrap; cursor: pointer; transition: background 0.15s;
+  }
+  .reg-card-pdf:hover { background: #dce6f1; }
+
+  /* 관리자 UI */
+  .admin-btn {
+    position: fixed; bottom: 32px; right: 32px;
+    background: var(--primary-p); color: var(--primary); border: none; border-radius: 8px;
+    padding: 8px 16px; font-size: 0.75rem; font-weight: 600; font-family: inherit;
+    cursor: pointer; transition: all 0.15s;
+  }
+  .admin-btn:hover { background: var(--primary); color: #fff; }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(26,26,46,0.6); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .modal-overlay.show { opacity: 1; pointer-events: all; }
+
+  .modal {
+    background: var(--card); padding: 32px 36px; width: 340px; border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15); border: 1px solid var(--border);
+  }
+  .modal h3 { font-size: 1.1rem; font-weight: 800; margin-bottom: 8px; color: var(--primary); text-align: center; }
+  .modal p { font-size: 0.8rem; color: var(--ink-muted); margin-bottom: 24px; line-height: 1.6; text-align: center; }
+  .modal input[type="password"] {
+    width: 100%; border: 1px solid var(--border); border-radius: 8px;
+    padding: 12px 14px; font-size: 0.9rem; font-family: inherit;
+    outline: none; margin-bottom: 16px; transition: border-color 0.15s;
+  }
+  .modal input[type="password"]:focus { border-color: var(--primary); }
+
+  .modal-btns { display: flex; gap: 8px; flex-direction: column; }
+  .modal-confirm {
+    width: 100%; background: var(--primary); color: #fff; border-radius: 8px;
+    border: none; padding: 12px; font-family: inherit; font-weight: 600;
+    font-size: 0.85rem; cursor: pointer; transition: background 0.15s;
+  }
+  .modal-confirm:hover { background: var(--primary-l); }
+  .modal-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .modal-cancel {
+    width: 100%; background: transparent; color: var(--ink-muted); border-radius: 8px;
+    border: 1px solid var(--border); padding: 12px; font-family: inherit; font-weight: 600;
+    font-size: 0.85rem; cursor: pointer; transition: background 0.15s;
+  }
+  .modal-cancel:hover { background: var(--paper); color: var(--ink); }
+
+  .modal-msg {
+    font-size: 0.78rem; margin-top: 12px; min-height: 18px; font-weight: 500;
+    text-align: center;
+  }
+  .modal-msg.ok  { color: var(--success); }
+  .modal-msg.err { color: var(--danger); }
+
+  .site-footer {
+    margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border);
+    font-size: 0.75rem; color: var(--ink-muted); text-align: center; font-weight: 500;
+  }
+</style>
+</head>
+<body>
+
+<!-- 초기 로딩 오버레이 -->
+<div class="init-overlay" id="initOverlay">
+  <div class="spinner"></div>
+  <p id="initMsg">규정 데이터를 불러오는 중입니다…</p>
+</div>
+
+<div class="page-wrap">
+  <header class="site-header">
+    <h1><span>Regulation Search</span>부산외국어대학교 규정 검색 시스템</h1>
+    <div class="header-deco">
+      <img src="https://www.bufs.ac.kr/data/logo/top_logo_w.png" alt="학교 로고">
+    </div>
+  </header>
+
+  <section class="search-section">
+    <label class="search-label" for="kw">키워드 입력</label>
+    <div class="search-row">
+      <input id="kw" class="search-input" type="text"
+             placeholder="검색할 단어를 입력하세요 (예: 수업연한, 학점, 징계)"
+             autocomplete="off" disabled>
+      <button class="search-btn" id="searchBtn" onclick="doSearch()" disabled>검색</button>
+    </div>
+  </section>
+
+  <div class="status-bar" id="statusBar"></div>
+  <div id="results"></div>
+
+  <footer class="site-footer">
+    규정 본문 기준 전문 검색 &nbsp;·&nbsp; record_status = active 행만 포함
+  </footer>
+</div>
+
+<!-- 관리자 버튼 -->
+<button class="admin-btn" onclick="openAdminModal()">⚙ 관리자</button>
+
+<!-- 관리자 모달 -->
+<div class="modal-overlay" id="adminModal">
+  <div class="modal">
+    <h3>관리자</h3>
+    <p>스프레드시트 수정 후 캐시를 초기화하면<br>최신 데이터가 반영됩니다.</p>
+    <input type="password" id="adminPw" placeholder="관리자 비밀번호"
+           onkeydown="if(event.key==='Enter') confirmClear()">
+    <div class="modal-btns">
+      <button class="modal-confirm" id="confirmBtn" onclick="confirmClear()">캐시 초기화</button>
+      <button class="modal-confirm" id="syncPdfBtn" onclick="confirmSyncPdf()" style="background:#375623">PDF 링크 매핑</button>
+      <button class="modal-cancel" onclick="closeAdminModal()">취소</button>
+    </div>
+    <div class="modal-msg" id="modalMsg"></div>
+  </div>
+</div>
+
+<script>
+let ALL_ROWS       = [];
+let ALL_AMENDMENTS = [];
+let SCRIPT_URL     = "https://script.google.com/macros/s/AKfycbx5Sqkb3yN1yPqmjSLv_9JIFUuyEvEqVA0Lw6s4OlLwUwtmRj1zMz7NXAautTuzngbg/exec";
+let REG_META_MAP   = {};
+
+// ── 유틸 ─────────────────────────────────────────────────────
+function buildArticleNo(raw) {
+  if (!raw) return "";
+  const s = String(raw).trim();
+  if (s.includes("_")) { const p = s.split("_"); return "제" + p[0] + "조의" + p[1]; }
+  return "제" + s + "조";
+}
+const CIRCLED = ["","①","②","③","④","⑤","⑥","⑦","⑧","⑨","⑩",
+                 "⑪","⑫","⑬","⑭","⑮","⑯","⑰","⑱","⑲","⑳"];
+function circle(n) { return CIRCLED[parseInt(n)] || String(n); }
+function escHtml(s) {
+  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+}
+function highlight(text, kw) {
+  if (!kw) return escHtml(text);
+  const esc = kw.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+  return escHtml(text).replace(new RegExp(esc,"gi"), m => "<mark>" + m + "</mark>");
+}
+function amendLabel(name) {
+  const m = REG_META_MAP[name] || {};
+  if (!m.lastAmendDate) return "";
+  return (m.lastAmendType ? m.lastAmendType + " " : "") + m.lastAmendDate;
+}
+
+// ── 초기 데이터 로드 ─────────────────────────────────────────
+function initData() {
+  google.script.run
+    .withSuccessHandler(function(data) {
+      ALL_ROWS       = data.rows       || [];
+      ALL_AMENDMENTS = data.amendments || [];
+      REG_META_MAP   = data.regMeta    || {};
+
+      document.getElementById("kw").disabled = false;
+      document.getElementById("searchBtn").disabled = false;
+      document.getElementById("kw").focus();
+      document.getElementById("initOverlay").classList.add("hidden");
+    })
+    .withFailureHandler(function(err) {
+      document.getElementById("initMsg").textContent =
+        "데이터 로드 실패: " + err.message;
+    })
+    .getAllData();
+
+  google.script.run
+    .withSuccessHandler(function(url) { SCRIPT_URL = url; })
+    .getScriptUrl();
+}
+
+// ── 브라우저 내 검색 ─────────────────────────────────────────
+function doSearch() {
+  const kw = document.getElementById("kw").value.trim();
+  if (!kw) return;
+  const kwLower = kw.toLowerCase();
+
+  // ── 규정명 검색 ──────────────────────────────────────────
+  const regNames   = [...new Set(ALL_ROWS.map(r => r.regulationName))];
+  const regMatches = regNames
+    .filter(name => name.toLowerCase().includes(kwLower))
+    .map(name => ({
+      regulationName : name,
+      lastAmendLabel : amendLabel(name)
+    }));
+
+  // ── 조문 내용 검색 ────────────────────────────────────────
+  const seen          = new Set();
+  const articleMatches = [];
+
+  ALL_ROWS.forEach(r => {
+    if (!r.content.toLowerCase().includes(kwLower)) return;
+    const key = r.regulationName + "||" + r.articleNo;
+    if (seen.has(key)) return;
+    seen.add(key);
+
+    const articleRows = ALL_ROWS.filter(x =>
+      x.regulationName === r.regulationName &&
+      x.articleNo      === r.articleNo
+    ).sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+
+    articleMatches.push({
+      regulationName : r.regulationName,
+      lastAmendLabel : amendLabel(r.regulationName),
+      effDate        : (function(m){ return m.lastEffDate || m.lastAmendDate || ""; })(REG_META_MAP[r.regulationName] || {}),
+      articleNo      : r.articleNo,
+      articleTitle   : r.articleTitle,
+      articleRows    : articleRows,
+    });
+  });
+
+  articleMatches.sort((a, b) => {
+    const nc = a.regulationName.localeCompare(b.regulationName, "ko");
+    if (nc !== 0) return nc;
+    return a.articleNo.localeCompare(b.articleNo);
+  });
+
+  // ── 상태바 ────────────────────────────────────────────────
+  const parts = [];
+  if (regMatches.length)     parts.push("규정 " + regMatches.length + "건");
+  if (articleMatches.length) parts.push("조문 " + articleMatches.length + "건");
+  document.getElementById("statusBar").textContent =
+    parts.length > 0
+      ? '"' + kw + '" 검색 결과 — ' + parts.join(", ")
+      : '';
+
+  renderResults(regMatches, articleMatches, kw);
+}
+
+function renderArticleBody(articleRows, kw) {
+  const paraCount = articleRows.filter(r => r.paragraphNo && !r.itemNo).length;
+  let html = "";
+  articleRows.forEach(r => {
+    if (r.itemNo) {
+      html += '<span class="item-line">' + escHtml(r.itemNo) + ".&nbsp;" + highlight(r.content, kw) + '</span>';
+    } else if (r.paragraphNo) {
+      html += '<span class="para-line">'
+            + (paraCount > 1 ? circle(r.paragraphNo) + "&nbsp;" : "")
+            + highlight(r.content, kw) + '</span>';
+    }
+  });
+  return html;
+}
+
+function renderResults(regMatches, articleMatches, kw) {
+  const el = document.getElementById("results");
+
+  if (!regMatches.length && !articleMatches.length) {
+    el.innerHTML =
+      '<div class="no-result"><span class="icon">🔍</span>'
+      + '<p><strong>"' + escHtml(kw) + '"</strong>에 해당하는 규정 또는 조문이 없습니다.</p></div>';
+    return;
+  }
+
+  let html = "";
+
+  // ── 규정 섹션 ────────────────────────────────────────────
+  if (regMatches.length) {
+    html += '<div class="section-head">규정 <strong>' + regMatches.length + '건</strong></div>';
+    html += '<div class="reg-cards">';
+    regMatches.forEach(item => {
+      const regEsc = item.regulationName.replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+      const meta   = REG_META_MAP[item.regulationName] || {};
+      const pdfUrl = meta.pdfUrl || "";
+      html +=
+        '<div class="reg-card" onclick="openFullPage(\'' + regEsc + '\')" title="전문 보기">'
+        + '<div>'
+        + '<div class="reg-card-name">' + highlight(item.regulationName, kw) + '</div>'
+        + (item.lastAmendLabel ? '<div class="reg-card-date">' + escHtml(item.lastAmendLabel) + '</div>' : '')
+        + '</div>'
+        + '<div style="display:flex;gap:8px;align-items:center;flex-shrink:0">'
+        + (pdfUrl ? '<a class="reg-card-pdf" href="' + escHtml(pdfUrl) + '" target="_blank" onclick="event.stopPropagation()">PDF ↗</a>' : '')
+        + '<span class="reg-card-btn">전문 보기 →</span>'
+        + '</div>'
+        + '</div>';
+    });
+    html += '</div>';
+  }
+
+  // ── 조문 섹션 ────────────────────────────────────────────
+  if (articleMatches.length) {
+    html += '<div class="section-head"' + (regMatches.length ? ' style="margin-top:32px"' : '') + '>'
+          + '조문 <strong>' + articleMatches.length + '건</strong></div>';
+    html += '<p class="click-hint">행을 클릭하면 해당 규정 전문이 새 탭으로 열립니다</p>';
+
+    let rows   = "";
+    let prevReg = null;
+
+    articleMatches.forEach(item => {
+      const isGroupStart = item.regulationName !== prevReg;
+      prevReg = item.regulationName;
+      const artNo    = buildArticleNo(item.articleNo);
+      const artTitle = item.articleTitle ? artNo + "(" + item.articleTitle + ")" : artNo;
+      const body     = renderArticleBody(item.articleRows, kw);
+      const regEsc   = item.regulationName.replace(/\\/g,"\\\\").replace(/'/g,"\\'");
+
+      rows +=
+        '<tr' + (isGroupStart ? ' class="group-start"' : '')
+        + ' onclick="openFullPage(\'' + regEsc + '\')" title="클릭하면 전문 보기">'
+        + '<td class="cell-reg">' + (isGroupStart ? escHtml(item.regulationName) : "") + '</td>'
+        + '<td class="cell-date">' + (isGroupStart ? escHtml(item.effDate) : "") + '</td>'
+        + '<td class="cell-cont">'
+        + '<div class="art-title">' + escHtml(artTitle) + '</div>'
+        + '<div class="art-body">' + body + '</div>'
+        + '</td></tr>';
+    });
+
+    html += '<div class="result-table-wrap"><table class="result-table">'
+          + '<thead><tr>'
+          + '<th class="col-reg">규정명</th>'
+          + '<th class="col-date">시행일</th>'
+          + '<th class="col-cont">내용</th>'
+          + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+
+  el.innerHTML = html;
+}
+
+function openFullPage(regulationName) {
+  localStorage.setItem("targetRegulation", regulationName);
+  const regRows = ALL_ROWS.filter(r => r.regulationName === regulationName);
+  const amends  = ALL_AMENDMENTS
+    .filter(a => a.regulationName === regulationName)
+    .sort((a, b) => a.seq - b.seq);
+  const meta    = REG_META_MAP[regulationName] || {};
+  
+  localStorage.setItem("fullRegData", JSON.stringify({ 
+    regulationName, 
+    rows: regRows, 
+    amendments: amends, 
+    pdfUrl: meta.pdfUrl || "", 
+    meta 
+  }));
+
+  // 현재 창 이동 방식으로 변경함
+  location.href = SCRIPT_URL + "?page=full";
+}
+
+// ── 관리자 모달 ──────────────────────────────────────────────
+function openAdminModal() {
+  document.getElementById("adminPw").value = "";
+  document.getElementById("modalMsg").textContent = "";
+  document.getElementById("modalMsg").className = "modal-msg";
+  document.getElementById("confirmBtn").disabled = false;
+  document.getElementById("adminModal").classList.add("show");
+  setTimeout(() => document.getElementById("adminPw").focus(), 100);
+}
+
+function closeAdminModal() {
+  document.getElementById("adminModal").classList.remove("show");
+}
+
+function confirmClear() {
+  const pw  = document.getElementById("adminPw").value;
+  const btn = document.getElementById("confirmBtn");
+  const msg = document.getElementById("modalMsg");
+
+  if (!pw) { msg.textContent = "비밀번호를 입력해주세요."; msg.className = "modal-msg err"; return; }
+
+  btn.disabled = true;
+  msg.textContent = "초기화 중…";
+  msg.className = "modal-msg";
+
+  google.script.run
+    .withSuccessHandler(function(result) {
+      btn.disabled = false;
+      msg.textContent = result.message;
+      msg.className = "modal-msg " + (result.success ? "ok" : "err");
+
+      if (result.success) {
+        // 캐시 초기화 성공 → 브라우저 데이터도 갱신
+        setTimeout(function() {
+          closeAdminModal();
+          document.getElementById("initOverlay").classList.remove("hidden");
+          document.getElementById("initMsg").textContent = "최신 데이터를 불러오는 중입니다…";
+          document.getElementById("kw").disabled = true;
+          document.getElementById("searchBtn").disabled = true;
+          ALL_ROWS = []; ALL_AMENDMENTS = []; REG_META_MAP = {};
+          initData();
+        }, 1200);
+      }
+    })
+    .withFailureHandler(function(err) {
+      btn.disabled = false;
+      msg.textContent = "오류: " + err.message;
+      msg.className = "modal-msg err";
+    })
+    .clearCacheWithPassword(pw);
+}
+
+function confirmSyncPdf() {
+  const pw  = document.getElementById("adminPw").value;
+  const msg = document.getElementById("modalMsg");
+  const btn = document.getElementById("syncPdfBtn");
+
+  if (!pw) { msg.textContent = "비밀번호를 입력해주세요."; msg.className = "modal-msg err"; return; }
+
+  btn.disabled = true;
+  msg.textContent = "Drive 스캔 중…";
+  msg.className = "modal-msg";
+
+  google.script.run
+    .withSuccessHandler(function(result) {
+      btn.disabled = false;
+      msg.textContent = result.message;
+      msg.className = "modal-msg " + (result.success ? "ok" : "err");
+    })
+    .withFailureHandler(function(err) {
+      btn.disabled = false;
+      msg.textContent = "오류: " + err.message;
+      msg.className = "modal-msg err";
+    })
+    .syncPdfUrls(pw);
+}
+
+// 모달 외부 클릭 시 닫기
+document.getElementById("adminModal").addEventListener("click", function(e) {
+  if (e.target === this) closeAdminModal();
+});
+
+// 엔터키
+document.getElementById("kw").addEventListener("keydown", function(e) {
+  if (e.key === "Enter") doSearch();
+});
+
+initData();
+</script>
+</body>
+</html>

@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>규정 전문</title>
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --primary:   #1B3A5C; /* 네이비 */
+    --primary-l: #2C5F8A;
+    --primary-p: #EDF2F7;
+    --ink:       #1A1A1A;
+    --ink-soft:  #4B5563;
+    --ink-muted: #6B7280;
+    --paper:     #FAFAF8;
+    --card:      #FFFFFF;
+    --accent:    #D4894A; /* 골드/브라운 */
+    --border:    #E5E7EB;
+    --toc-w:     280px;
+  }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--paper); color: var(--ink);
+    font-family: "Pretendard Variable", -apple-system, sans-serif;
+    font-size: 14px; line-height: 1.8;
+  }
+
+  /* ── 새로 추가된 돌아가기 버튼 스타일 ── */
+  .back-btn {
+    display: flex; 
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    margin-bottom: 50px;
+    color: var(--ink-soft);
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: all 0.2s;
+    cursor: pointer;
+    border: none;
+    background: none;
+    width: 100%;
+  }
+  .back-btn:hover { color: var(--primary); background: var(--primary-p); border-radius: 6px; }
+  .back-btn-icon { font-size: 1.1rem; }
+
+  /* ── 레이아웃 ── */
+  .toc {
+    position: fixed; left: 0; top: 0; width: var(--toc-w); height: 100vh;
+    overflow-y: auto; background: var(--card); border-right: 1px solid var(--border);
+    z-index: 100; padding: 24px 12px;
+  }
+  .toc::-webkit-scrollbar { width: 4px; }
+  .toc::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .content-area { margin-left: var(--toc-w); min-height: 100vh; background: var(--paper); }
+
+  /* ── 트리 내비게이션 스타일 ── */
+  .toc-header { padding: 0 8px 20px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .toc-reg-name { font-size: 1rem; font-weight: 800; color: var(--primary); line-height: 1.4; }
+
+  .toc-chap-row, .toc-sect-row {
+    display: flex; align-items: flex-start; gap: 6px; padding: 6px 8px;
+    border-radius: 6px; cursor: pointer; transition: background 0.1s;
+  }
+  .toc-chap-row:hover, .toc-sect-row:hover { background: var(--primary-p); }
+  .toc-chap-row { margin-top: 8px; }
+  .toc-sect-row { margin-left: 12px; }
+
+  .toc-toggle {
+    flex-shrink: 0; font-size: 10px; color: var(--ink-muted);
+    width: 16px; height: 16px; display: flex; align-items: center; justify-content: center;
+    margin-top: 4px; cursor: pointer;
+  }
+  .toc-chap-label { font-size: 0.9rem; font-weight: 700; color: var(--primary); text-decoration: none; }
+  .toc-sect-label { font-size: 0.85rem; font-weight: 600; color: var(--ink-soft); text-decoration: none; }
+
+  .toc-chap-body.collapsed, .toc-sect-body.collapsed { display: none; }
+
+  .toc-art {
+    display: block; padding: 4px 12px 4px 16px; margin: 2px 0 2px 28px;
+    font-size: 0.82rem; color: var(--ink-muted); font-weight: 500;
+    text-decoration: none; border-left: 1px solid var(--border);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; transition: all 0.1s;
+  }
+  .toc-sect-body .toc-art { margin-left: 40px; }
+  .toc-art:hover { color: var(--primary); border-left: 2px solid var(--accent); background: var(--primary-p); }
+  .toc-art.active { color: var(--primary); font-weight: 700; border-left: 2px solid var(--accent); background: var(--primary-p); }
+
+  /* ── 본문 전문 스타일 ── */
+  .page-wrap { max-width: 800px; margin: 0 auto; padding: 60px 40px 120px; }
+  .reg-title { font-size: 2.2rem; font-weight: 800; color: var(--primary); margin-bottom: 16px; text-align: center; }
+  .reg-meta { font-size: 0.85rem; color: var(--ink-muted); border-bottom: 2px solid var(--primary); padding-bottom: 20px; margin-bottom: 40px; }
+
+  .chapter-header { font-size: 1.3rem; font-weight: 800; color: var(--primary); margin: 60px 0 24px; padding: 12px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); scroll-margin-top: 40px; text-align: center; }
+  .section-header { font-size: 1.1rem; font-weight: 700; color: var(--primary-l); margin: 32px 0 16px; scroll-margin-top: 40px; text-align: center; }
+
+  .article { margin-bottom: 32px; scroll-margin-top: 40px; border-bottom: 1px dashed var(--border); padding-bottom: 20px; }
+  .article-title { font-weight: 700; font-size: 1.05rem; color: var(--ink); margin-bottom: 10px; }
+  .article-body { font-size: 1rem; color: #374151; }
+
+  .para-line { display: block; padding-left: 1.2em; text-indent: -1.2em; margin-bottom: 4px; }
+  .item-line { display: block; padding-left: 2.4em; text-indent: -1.2em; margin-bottom: 2px; }
+  .subitem-line { display: block; padding-left: 3.6em; text-indent: -1.2em; margin-bottom: 2px; }
+
+  /* 부칙 스타일 */
+  .amendment-section { margin-top: 80px; padding-top: 40px; border-top: 2px solid var(--primary); }
+  .amendment-section-title { font-size: 0.75rem; font-weight: 800; color: var(--ink-muted); letter-spacing: 0.2em; margin-bottom: 30px; text-transform: uppercase; text-align: center; }
+  .amendment-item { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 16px; }
+  .amendment-header { font-weight: 700; font-size: 1rem; color: var(--primary); margin-bottom: 8px; text-align: center; }
+  .amendment-content { font-size: 0.95rem; color: var(--ink-soft); white-space: pre-wrap; }
+
+  /* 버튼들 */
+  .print-btn, .pdf-btn { position: fixed; bottom: 32px; border-radius: 8px; padding: 12px 24px; font-weight: 700; cursor: pointer; box-shadow: 0 4px 12px rgba(0,0,0,0.1); transition: all 0.2s; }
+  .print-btn { right: 32px; background: var(--primary); color: #fff; border: none; }
+  .pdf-btn { right: 150px; background: #375623; color: #fff; text-decoration: none; display: none; }
+  .print-btn:hover { background: var(--primary-l); transform: translateY(-2px); }
+
+  @media print { .toc, .print-btn, .pdf-btn { display: none !important; } .content-area { margin-left: 0; } .page-wrap { padding: 0; } }
+
+  /* 스켈레톤 애니메이션 및 스타일 추가 */
+  .skeleton-line {
+   height: 14px; background: #eee; margin: 12px 0; border-radius: 4px;
+   background: linear-gradient(90deg, #f0f0f0 25%, #e6e6e6 50%, #f0f0f0 75%);
+   background-size: 200% 100%; animation: skeleton-loading 1.5s infinite;
+  }
+  .skeleton-block {
+   height: 120px; background: #f0f0f0; margin-bottom: 30px; border-radius: 12px;
+   background: linear-gradient(90deg, #f0f0f0 25%, #e6e6e6 50%, #f0f0f0 75%);
+   background-size: 200% 100%; animation: skeleton-loading 1.5s infinite;
+  }
+  @keyframes skeleton-loading { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+</style>
+</head>
+<body>
+<div id="app">
+  <nav class="toc">
+    <button class="back-btn" onclick="window.top.location.href='https://script.google.com/macros/s/AKfycbx5Sqkb3yN1yPqmjSLv_9JIFUuyEvEqVA0Lw6s4OlLwUwtmRj1zMz7NXAautTuzngbg/exec'; return false;">
+      <span class="back-btn-icon">←</span><span>홈 화면으로 돌아가기</span>
+    </button>
+  <div class="toc-header"><div class="skeleton-line" style="width:70%"></div></div>
+    <div class="toc-header"><div class="skeleton-line" style="width:70%"></div></div>
+    <div style="padding:10px">
+      <div class="skeleton-line" style="width:80%"></div>
+      <div class="skeleton-line" style="width:60%; margin-left:20px"></div>
+      <div class="skeleton-line" style="width:80%"></div>
+    </div>
+  </nav>
+  <div class="content-area">
+    <div class="page-wrap">
+      <div class="skeleton-line" style="width:40%; height:40px; margin: 0 auto 30px"></div>
+      <div class="skeleton-block"></div>
+      <div class="skeleton-block"></div>
+    </div>
+  </div>
+</div>
+<a id="pdfBtn" class="pdf-btn" target="_blank">PDF 다운로드 ↗</a>
+<button class="print-btn" onclick="window.print()">🖨 인쇄하기</button>
+
+<script>
+// 기존 데이터 처리 함수들 유지
+function escHtml(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function buildArticleNo(raw) {
+  if (!raw) return "";
+  const s = String(raw).trim();
+  if (s.includes("_")) { const p = s.split("_"); return "제" + p[0] + "조의" + p[1]; }
+  return "제" + s + "조";
+}
+function buildChapterNo(s) { if (!s) return ""; return "제" + s + (s.includes("의") ? "" : "장"); }
+function buildSectionNo(s) { if (!s) return ""; return "제" + s + (s.includes("의") ? "" : "절"); }
+const CIRCLED = ["","①","②","③","④","⑤","⑥","⑦","⑧","⑨","⑩","⑪","⑫","⑬","⑭","⑮","⑯","⑰","⑱","⑲","⑳"];
+function circle(n) { return CIRCLED[parseInt(n)] || String(n); }
+
+function tocToggle(arrowEl) {
+  const row = arrowEl.parentElement;
+  const body = row.nextElementSibling;
+  if (!body) return;
+  const collapsed = body.classList.toggle("collapsed");
+  arrowEl.textContent = collapsed ? "▸" : "▾";
+}
+
+function artAnchorId(articleNo) { return "art-" + String(articleNo).replace(/[^a-zA-Z0-9_\-]/g, "_"); }
+function chapAnchorId(chapter) { return "chap-" + String(chapter).replace(/[^a-zA-Z0-9_\-]/g, "_"); }
+function sectAnchorId(section) { return "sect-" + String(section).replace(/[^a-zA-Z0-9_\-]/g, "_"); }
+
+// 트리 구조 생성 로직 (기존 buildToc 유지)
+function buildToc(regulationName, articleOrder, articleMap) {
+  const groups = [];
+  let curChapIdx = -1;
+  let curSectIdx = -1;
+
+  articleOrder.forEach(key => {
+    const art = articleMap[key];
+    const chapKey = art.chapter || "";
+    if (chapKey) {
+      if (curChapIdx < 0 || groups[curChapIdx].chapter !== chapKey) {
+        groups.push({ chapter: chapKey, chapterTitle: art.chapterTitle || "", sections: [], articles: [] });
+        curChapIdx = groups.length - 1; curSectIdx = -1;
+      }
+      const chap = groups[curChapIdx];
+      const sectKey = art.section || "";
+      if (sectKey) {
+        if (curSectIdx < 0 || chap.sections[curSectIdx].section !== sectKey) {
+          chap.sections.push({ section: sectKey, sectionTitle: art.sectionTitle || "", articles: [] });
+          curSectIdx = chap.sections.length - 1;
+        }
+        chap.sections[curSectIdx].articles.push(art);
+      } else { chap.articles.push(art); }
+    } else {
+      if (curChapIdx < 0 || groups[curChapIdx].chapter !== "") {
+        groups.push({ chapter: "", chapterTitle: "", sections: [], articles: [] });
+        curChapIdx = groups.length - 1; curSectIdx = -1;
+      }
+      groups[curChapIdx].articles.push(art);
+    }
+  });
+
+  // 돌아가기 버튼 HTML 삽입 (현재 창에서 열 때 가장 잘 작동함)
+let h = '<button class="back-btn" onclick="window.top.location.href=\'https://script.google.com/macros/s/AKfycbx5Sqkb3yN1yPqmjSLv_9JIFUuyEvEqVA0Lw6s4OlLwUwtmRj1zMz7NXAautTuzngbg/exec\';">'
+      + '<span class="back-btn-icon">←</span>'
+      + '<span>홈 화면으로 돌아가기</span>'
+      + '</button>';
+  h += '<div class="toc-header"><div class="toc-reg-name">' + escHtml(regulationName) + '</div></div>';
+  groups.forEach(chap => {
+    if (chap.chapter) {
+      const chapLabel = buildChapterNo(chap.chapter) + (chap.chapterTitle ? " " + chap.chapterTitle : "");
+      h += '<div class="toc-chap-row"><span class="toc-toggle" onclick="tocToggle(this)">▾</span>'
+        + '<a class="toc-chap-label" href="#' + chapAnchorId(chap.chapter) + '">' + escHtml(chapLabel) + '</a></div>'
+        + '<div class="toc-chap-body">';
+      chap.sections.forEach(sect => {
+        const sectLabel = buildSectionNo(sect.section) + (sect.sectionTitle ? " " + sect.sectionTitle : "");
+        h += '<div class="toc-sect-row"><span class="toc-toggle" onclick="tocToggle(this)">▾</span>'
+          + '<a class="toc-sect-label" href="#' + sectAnchorId(sect.section) + '">' + escHtml(sectLabel) + '</a></div>'
+          + '<div class="toc-sect-body">';
+        sect.articles.forEach(art => {
+          const artLabel = buildArticleNo(art.articleNo) + (art.articleTitle ? "(" + art.articleTitle + ")" : "");
+          h += '<a class="toc-art sect-child" href="#' + artAnchorId(art.articleNo) + '">' + escHtml(artLabel) + '</a>';
+        });
+        h += '</div>';
+      });
+      chap.articles.forEach(art => {
+        const artLabel = buildArticleNo(art.articleNo) + (art.articleTitle ? "(" + art.articleTitle + ")" : "");
+        h += '<a class="toc-art" href="#' + artAnchorId(art.articleNo) + '">' + escHtml(artLabel) + '</a>';
+      });
+      h += '</div>';
+    } else {
+      chap.articles.forEach(art => {
+        const artLabel = buildArticleNo(art.articleNo) + (art.articleTitle ? "(" + art.articleTitle + ")" : "");
+        h += '<a class="toc-art" href="#' + artAnchorId(art.articleNo) + '">' + escHtml(artLabel) + '</a>';
+      });
+    }
+  });
+  return '<nav class="toc" id="toc">' + h + '</nav>';
+}
+
+function renderFull(data) {
+  const rows = data.rows || [];
+  const amends = data.amendments || [];
+  const articleMap = {};
+  const articleOrder = [];
+
+  rows.forEach(r => {
+    const key = r.articleNo;
+    if (!articleMap[key]) {
+      articleMap[key] = { articleNo: r.articleNo, articleTitle: r.articleTitle, chapter: r.chapter || "", chapterTitle: r.chapterTitle || "", section: r.section || "", sectionTitle: r.sectionTitle || "", rows: [] };
+      articleOrder.push(key);
+    }
+    articleMap[key].rows.push(r);
+  });
+
+  let bodyHtml = "";
+  let prevChapter = null;
+  let prevSection = null;
+
+  articleOrder.forEach(key => {
+    const art = articleMap[key];
+    const artNo = buildArticleNo(art.articleNo);
+    const artTitle = art.articleTitle ? "(" + art.articleTitle + ")" : "";
+    const paraCount = art.rows.filter(r => r.paragraphNo && !r.itemNo).length;
+
+    if (art.chapter && art.chapter !== prevChapter) {
+      bodyHtml += '<div class="chapter-header" id="' + chapAnchorId(art.chapter) + '">' + escHtml(buildChapterNo(art.chapter)) + '&nbsp;&nbsp;' + escHtml(art.chapterTitle) + '</div>';
+      prevChapter = art.chapter; prevSection = null;
+    }
+    if (art.section && art.section !== prevSection) {
+      bodyHtml += '<div class="section-header" id="' + sectAnchorId(art.section) + '">' + escHtml(buildSectionNo(art.section)) + '&nbsp;&nbsp;' + escHtml(art.sectionTitle) + '</div>';
+      prevSection = art.section;
+    }
+
+    const ART_LEVEL_TYPES = ["본조신설", "전부개정"];
+    const artLevelRow = art.rows.find(r => ART_LEVEL_TYPES.indexOf(r.changeType || "") >= 0);
+    const artLevelAnno = artLevelRow ? '<div class="art-revision">(' + escHtml(artLevelRow.changeType) + ' ' + escHtml(artLevelRow.changeDate) + ')</div>' : '';
+
+    let lines = "";
+    art.rows.forEach(r => {
+      const ct = r.changeType || "";
+      const cd = r.changeDate || "";
+      let anno = "";
+      if (cd && ART_LEVEL_TYPES.indexOf(ct) < 0 && ct !== "신규") {
+        if (ct === "삭제") anno = '<span class="anno-del">&lt;' + escHtml(cd) + '&gt;</span>';
+        else if (ct) anno = '<span class="anno-rev">(' + escHtml(ct) + ' ' + escHtml(cd) + ')</span>';
+      }
+      if (r.itemNo) lines += '<span class="item-line">' + escHtml(r.itemNo) + ".&nbsp;" + escHtml(r.content) + anno + '</span>';
+      else if (r.paragraphNo) lines += '<span class="para-line">' + (paraCount > 1 ? circle(r.paragraphNo) + "&nbsp;" : "") + escHtml(r.content) + anno + '</span>';
+    });
+
+    bodyHtml += '<div class="article" id="' + artAnchorId(art.articleNo) + '">' + '<div class="article-title">' + escHtml(artNo + artTitle) + '</div>' + '<div class="article-body">' + lines + '</div>' + artLevelAnno + '</div>';
+  });
+
+  let amendHtml = "";
+  if (amends.length > 0) {
+    let items = "";
+    amends.forEach(a => {
+      const header = a.amendDate ? "부 칙(" + escHtml((a.amendType ? a.amendType + " " : "") + a.amendDate) + ")" : "부 칙";
+      items += '<div class="amendment-item"><div class="amendment-header">' + header + '</div><div class="amendment-content">' + escHtml(a.content) + '</div></div>';
+    });
+    amendHtml = '<div class="amendment-section"><div class="amendment-section-title">부칙</div>' + items + '</div>';
+  }
+
+  const metaLines = [];
+  if (data.meta) {
+    const m = data.meta;
+    if (m.enactDate) metaLines.push("제정 " + escHtml(m.enactDate));
+    if (m.lastAmendDate && m.lastAmendDate !== m.enactDate) {
+      let line = escHtml((m.lastAmendType || "개정") + " " + m.lastAmendDate);
+      if (m.lastEffDate) line += "&nbsp;&nbsp;·&nbsp;&nbsp;시행 " + escHtml(m.lastEffDate);
+      metaLines.push(line);
+    }
+  }
+  const metaHtml = metaLines.length ? metaLines.join("<br>") : "규정 전문";
+
+  const tocHtml = buildToc(data.regulationName, articleOrder, articleMap);
+
+  document.title = data.regulationName + " 전문";
+  document.getElementById("app").innerHTML = tocHtml 
+    + '<div class="content-area"><div class="page-wrap">'
+    + '<h1 class="reg-title">' + escHtml(data.regulationName) + '</h1>'
+    + '<div class="reg-meta">' + metaHtml + '</div>'
+    + bodyHtml + amendHtml
+    + '<div class="doc-end">— 끝 —</div></div></div>';
+
+  initTocHighlight();
+}
+
+function initTocHighlight() {
+  const arts = document.querySelectorAll(".article[id]");
+  const links = document.querySelectorAll(".toc-art");
+  if (!arts.length || !links.length) return;
+
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+      // 조항이 화면의 지정된 지점(정중앙 근처)에 들어왔을 때
+      if (entry.isIntersecting) {
+        const id = entry.target.id;
+        links.forEach(a => {
+          const href = a.getAttribute("href");
+          if (href === "#" + id) {
+            a.classList.add("active");
+            // 하이라이트된 항목이 트리 내비게이터 밖으로 벗어나면 자동 스크롤로 보여줌
+            a.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          } else {
+            a.classList.remove("active");
+          }
+        });
+      }
+    });
+  }, { 
+    /* rootMargin: 상단 마진, 우측, 하단 마진, 좌측 순서 */
+    /* 화면 상단에서 45%, 하단에서 45%를 제외한 나머지 10% 영역(중앙)만 감지 */
+    rootMargin: "-45% 0px -45% 0px", 
+    threshold: 0 
+  });
+
+  arts.forEach(el => observer.observe(el));
+}
+
+try {
+  const raw = localStorage.getItem("fullRegData");
+  if (!raw) throw new Error("no data");
+  const data = JSON.parse(raw);
+  renderFull(data);
+  if (data.pdfUrl) { const btn = document.getElementById("pdfBtn"); btn.href = data.pdfUrl; btn.style.display = "block"; }
+} catch(e) {
+  document.getElementById("app").innerHTML = '<div class="error-screen"><p>데이터를 불러올 수 없습니다.<br>검색 페이지에서 규정을 다시 선택해 주세요.</p></div>';
+}
+</script>
+</body>
+</html>
