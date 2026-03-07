@@ -70,11 +70,13 @@
   .print-btn-header:hover { background: var(--muted); color: var(--ink); }
 
   /* ── 레이아웃 ── */
+  .app-outer {
+    padding: 0 40px;
+  }
   #app {
     display: flex;
     max-width: 1360px;
     margin: 0 auto;
-    padding: 0 40px;
   }
   .toc {
     position: sticky; top: 92px;
@@ -88,12 +90,17 @@
   .toc::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
   .content-area { flex: 1; min-width: 0; background: var(--paper); }
   .site-footer {
-    padding: 16px 40px;
+    max-width: 1360px;
+    margin: 0 auto;
+    padding: 16px 0;
     background: var(--krds-light-color-surface-gray-subtle);
     border-top: 1px solid var(--krds-light-color-surface-gray-subtle);
     display: flex; align-items: center; justify-content: center;
     font-size: 0.9375rem; color: #464C53; line-height: 1.5; font-weight: 400;
     text-align: center;
+  }
+  .app-outer {
+    background: var(--krds-light-color-surface-gray-subtle);
   }
 
   /* ── TOC 스타일 ── */
@@ -222,30 +229,32 @@
   </div>
 </header>
 
-<div id="app">
-  <nav class="toc">
-    <div class="toc-header"><div class="skeleton-line" style="width:70%"></div></div>
-    <div style="padding:0 8px">
-      <div class="skeleton-line" style="width:80%"></div>
-      <div class="skeleton-line" style="width:60%; margin-left:20px"></div>
-      <div class="skeleton-line" style="width:80%"></div>
-    </div>
-  </nav>
-  <div class="content-area">
-    <div class="page-wrap">
-      <div class="skeleton-line" style="width:40%; height:32px; margin: 0 auto 24px"></div>
-      <div class="skeleton-block"></div>
-      <div class="skeleton-block"></div>
+<div class="app-outer">
+  <div id="app">
+    <nav class="toc">
+      <div class="toc-header"><div class="skeleton-line" style="width:70%"></div></div>
+      <div style="padding:0 8px">
+        <div class="skeleton-line" style="width:80%"></div>
+        <div class="skeleton-line" style="width:60%; margin-left:20px"></div>
+        <div class="skeleton-line" style="width:80%"></div>
+      </div>
+    </nav>
+    <div class="content-area">
+      <div class="page-wrap">
+        <div class="skeleton-line" style="width:40%; height:32px; margin: 0 auto 24px"></div>
+        <div class="skeleton-block"></div>
+        <div class="skeleton-block"></div>
+      </div>
     </div>
   </div>
-</div>
 
-<footer class="site-footer">
-  <div>
-    46234 부산광역시 금정구 금샘로485번길 65 &nbsp; 대표전화 : 051.509.5000 &nbsp; FAX : 051.509.5005<br>
-    COPYRIGHT© 2008 BUSAN UNIVERSITY OF FOREIGN STUDIES. ALL RIGHTS RESERVED.
-  </div>
-</footer>
+  <footer class="site-footer">
+    <div>
+      46234 부산광역시 금정구 금샘로485번길 65 &nbsp; 대표전화 : 051.509.5000 &nbsp; FAX : 051.509.5005<br>
+      COPYRIGHT© 2008 BUSAN UNIVERSITY OF FOREIGN STUDIES. ALL RIGHTS RESERVED.
+    </div>
+  </footer>
+</div>
 
 <a id="pdfBtn" class="pdf-btn" target="_blank"></a>
 <button class="print-btn" onclick="window.print()"></button>
