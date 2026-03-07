@@ -70,17 +70,25 @@
   .print-btn-header:hover { background: var(--muted); color: var(--ink); }
 
   /* ── 레이아웃 ── */
+  #app {
+    display: flex;
+    max-width: 1360px;
+    margin: 0 auto;
+    padding: 0 40px;
+  }
   .toc {
-    position: fixed; left: 40px; top: 92px; width: var(--toc-w); height: calc(100vh - 92px);
+    position: sticky; top: 92px;
+    width: var(--toc-w); flex-shrink: 0;
+    height: calc(100vh - 92px);
     overflow-y: auto; background: var(--card); border-right: 1px solid var(--border);
-    z-index: 100; padding: 24px 12px;
+    padding: 24px 12px;
+    align-self: flex-start;
   }
   .toc::-webkit-scrollbar { width: 4px; }
   .toc::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-  .content-area { margin-left: calc(40px + var(--toc-w)); padding-right: 40px; min-height: 100vh; background: var(--paper); }
+  .content-area { flex: 1; min-width: 0; background: var(--paper); }
   .site-footer {
-    margin-left: calc(40px + var(--toc-w));
-    padding: 16px 40px 16px 0;
+    padding: 16px 40px;
     background: var(--krds-light-color-surface-gray-subtle);
     border-top: 1px solid var(--krds-light-color-surface-gray-subtle);
     display: flex; align-items: center; justify-content: center;
@@ -261,7 +269,13 @@ function allowHtml(s){
     .replace(/&lt;(\/?(table|tr|td|th|tbody|thead)[^&]*)&gt;/gi,"<$1>");
 }
 function buildChapterNo(s) { if (!s) return ""; return "제" + s + (s.includes("의") ? "" : "장"); }
-function buildSectionNo(s) { if (!s) return ""; return "제" + s + (s.includes("의") ? "" : "절"); }
+function buildSectionNo(s) {
+  if (!s) return "";
+  // "3의2" → "제3절의2", "3" → "제3절"
+  const m = String(s).match(/^(\d+)(의\d+)?$/);
+  if (m) return "제" + m[1] + "절" + (m[2] || "");
+  return "제" + s + "절";
+}
 const CIRCLED = ["","①","②","③","④","⑤","⑥","⑦","⑧","⑨","⑩","⑪","⑫","⑬","⑭","⑮","⑯","⑰","⑱","⑲","⑳"];
 function circle(n) { return CIRCLED[parseInt(n)] || String(n); }
 
