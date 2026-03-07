@@ -6,19 +6,20 @@
 <title>규정 전문</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+<link rel="stylesheet" href="krds_tokens.css">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --navy:      #0d4a7a;
-    --navy-l:    #1a6aaa;
+    --navy:      var(--krds-color-light-secondary-70);  /* #063A74 */
+    --navy-l:    var(--krds-color-light-secondary-60);  /* #1C589C */
     --gold:      #FDB71A;
-    --ink:       #1a1a1a;
-    --ink-soft:  #4B5563;
-    --ink-muted: #6B7280;
-    --paper:     #ffffff;
-    --muted:     #f1f3f5;
-    --card:      #ffffff;
-    --border:    #e5e7eb;
+    --ink:       var(--krds-color-light-gray-90);       /* #1E2124 */
+    --ink-soft:  var(--krds-color-light-gray-60);       /* #58616A */
+    --ink-muted: var(--krds-color-light-gray-50);       /* #6D7882 */
+    --paper:     var(--krds-color-light-gray-0);
+    --muted:     var(--krds-color-light-gray-5);
+    --card:      var(--krds-color-light-gray-0);
+    --border:    var(--krds-color-light-gray-20);       /* #CDD1D5 */
     --toc-w:     320px;
   }
   html { scroll-behavior: smooth; }
@@ -139,9 +140,9 @@
   .item-line { display: block; padding-left: 2.4em; text-indent: -1.2em; margin-bottom: 2px; }
   .subitem-line { display: block; padding-left: 3.6em; text-indent: -1.2em; margin-bottom: 2px; }
 
-  .anno-rev { font-size: 0.78rem; color: var(--ink-muted); font-style: normal; margin-left: 2px; }
-  .anno-del { font-size: 0.78rem; color: #DC2626; font-style: normal; margin-left: 2px; }
-  .art-revision { display: block; margin-top: 6px; font-size: 0.78rem; color: var(--ink-muted); font-style: normal; }
+  .anno-rev { font-size: 0.78rem; color: var(--ink-muted); font-style: normal !important; margin-left: 2px; }
+  .anno-del { font-size: 0.78rem; color: #DC2626; font-style: normal !important; margin-left: 2px; }
+  .art-revision { display: block; margin-top: 6px; font-size: 0.78rem; color: var(--ink-muted); font-style: normal !important; }
 
   /* 부칙 */
   .amendment-section { margin-top: 60px; padding-top: 32px; border-top: 2px solid var(--border); }
@@ -499,10 +500,27 @@ function loadFromApi(regParam) {
 
 (function() {
   const regParam = decodeURIComponent(new URLSearchParams(location.search).get("reg") || "");
-  if (!loadFromLocalStorage()) {
-    if (regParam) {
-      loadFromApi(regParam);
-    } else {
+
+  // localStorage 데이터가 요청된 규정과 일치할 때만 사용
+  if (regParam) {
+    try {
+      const raw = localStorage.getItem("fullRegData");
+      if (raw) {
+        const data = JSON.parse(raw);
+        if (data.regulationName === regParam) {
+          renderFull(data);
+          if (data.pdfUrl) {
+            const hdrBtn = document.getElementById("pdfBtnHeader");
+            if (hdrBtn) { hdrBtn.href = data.pdfUrl; hdrBtn.style.display = "flex"; }
+          }
+          return;
+        }
+      }
+    } catch(e) {}
+    loadFromApi(regParam);
+  } else {
+    // ?reg= 파라미터 없음: localStorage에서 그대로 로드
+    if (!loadFromLocalStorage()) {
       document.getElementById("app").innerHTML =
         '<div style="text-align:center;padding:80px 32px;color:#6b7280">'
         + '<p style="font-size:1rem;margin-bottom:16px">데이터를 불러올 수 없습니다.<br>검색 페이지에서 규정을 다시 선택해 주세요.</p>'

@@ -6,23 +6,24 @@
 <title>규정 검색 — 부산외국어대학교 규정관리시스템</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+<link rel="stylesheet" href="krds_tokens.css">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --navy:      #0d4a7a;
-    --navy-l:    #1a6aaa;
+    --navy:      var(--krds-color-light-secondary-70);  /* #063A74 */
+    --navy-l:    var(--krds-color-light-secondary-60);  /* #1C589C */
     --gold:      #FDB71A;
     --gold-h:    #E59A00;
-    --ink:       #1a1a1a;
-    --ink-soft:  #4B5563;
-    --ink-muted: #6B7280;
-    --paper:     #ffffff;
-    --muted:     #f1f3f5;
-    --card:      #ffffff;
+    --ink:       var(--krds-color-light-gray-90);       /* #1E2124 */
+    --ink-soft:  var(--krds-color-light-gray-60);       /* #58616A */
+    --ink-muted: var(--krds-color-light-gray-50);       /* #6D7882 */
+    --paper:     var(--krds-color-light-gray-0);
+    --muted:     var(--krds-color-light-gray-5);
+    --card:      var(--krds-color-light-gray-0);
     --mark-bg:   #fffbf0;
-    --border:    #e5e7eb;
-    --success:   #059669;
-    --danger:    #DC2626;
+    --border:    var(--krds-color-light-gray-20);       /* #CDD1D5 */
+    --success:   var(--krds-color-light-success-50);
+    --danger:    var(--krds-color-light-danger-50);
   }
   html, body {
     min-height: 100%;
@@ -52,14 +53,24 @@
   .site-logo img { height: 1.5em; width: auto; }
 
   .site-nav {
-    display: flex; gap: 24px; align-items: center;
+    display: flex; gap: 4px; align-items: center;
   }
   .site-nav a {
-    font-size: 0.9rem; font-weight: 500; color: #4B5563;
-    text-decoration: none; white-space: nowrap; transition: color 0.15s;
+    font-size: 0.9rem; font-weight: 700;
+    color: var(--krds-light-color-text-subtle);
+    text-decoration: none; white-space: nowrap;
+    padding: 6px 12px; border-radius: 6px;
+    transition: background 0.15s, color 0.15s;
   }
-  .site-nav a:hover { color: var(--ink); }
-  .site-nav a.active { color: var(--gold); font-weight: 700; }
+  .site-nav a:hover {
+    color: var(--krds-light-color-text-secondary);
+    background: var(--krds-light-color-action-secondary-hover);
+  }
+  .site-nav a.active {
+    color: var(--krds-light-color-text-secondary);
+    background: var(--krds-light-color-action-secondary-selected);
+    font-weight: 700;
+  }
 
   .header-search-form {
     position: relative; width: 240px; flex-shrink: 0;
@@ -69,13 +80,14 @@
     width: 16px; height: 16px; color: #9ca3af; pointer-events: none;
   }
   .header-search-input {
-    width: 100%; border: none; border-bottom: 1px solid #d1d5db;
+    width: 100%; border: none;
+    border-bottom: 1px solid var(--krds-light-color-border-gray-light);
     padding: 6px 4px 6px 22px; font-size: 0.88rem; font-family: inherit;
     background: transparent; color: var(--ink); outline: none;
     transition: border-color 0.15s;
   }
-  .header-search-input:focus { border-bottom-color: #6b7280; }
-  .header-search-input::placeholder { color: #9CA3AF; }
+  .header-search-input:focus { border-bottom-color: var(--krds-light-color-border-secondary); }
+  .header-search-input::placeholder { color: var(--krds-light-color-text-disabled); }
 
   /* ── 페이지 본문 ── */
   .page-wrap { max-width: 1280px; margin: 0 auto; padding: 0 32px 80px; }
@@ -102,25 +114,32 @@
   .search-row {
     display: flex; align-items: center;
     width: 100%; max-width: 560px; margin: 0 auto;
-    border: 1px solid #d1d5db; border-radius: 9999px;
+    border: 1px solid var(--krds-light-color-border-gray-dark);
+    border-radius: 6px;
     background: #fff; overflow: hidden;
-    padding: 4px 4px 4px 20px;
+    padding: 4px 4px 4px 16px;
   }
-  .search-row:focus-within { border-color: #9ca3af; box-shadow: 0 1px 6px rgba(0,0,0,0.08); }
+  .search-row:focus-within {
+    border-color: var(--krds-light-color-border-secondary);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+  }
   .search-input {
     flex: 1; border: none; outline: none;
     font-size: 0.95rem; font-family: inherit; background: transparent; color: var(--ink);
     padding: 8px 0;
   }
-  .search-input::placeholder { color: #9CA3AF; }
+  .search-input::placeholder { color: var(--krds-light-color-text-disabled); }
   .search-btn {
-    border: none; background: transparent; color: var(--ink);
+    border: none;
+    background: var(--krds-light-color-button-primary-fill);
+    color: var(--krds-light-color-text-inverse-static);
+    border-radius: 4px;
     padding: 8px 20px; font-size: 0.95rem; font-weight: 700;
-    font-family: inherit; cursor: pointer; transition: color 0.15s; white-space: nowrap;
+    font-family: inherit; cursor: pointer; transition: background 0.15s; white-space: nowrap;
     flex-shrink: 0;
   }
-  .search-btn:hover { color: var(--navy); }
-  .search-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .search-btn:hover { background: var(--krds-light-color-button-primary-fill-hover); }
+  .search-btn:disabled { background: var(--krds-light-color-button-disabled-fill); color: var(--krds-light-color-text-disabled-on); cursor: not-allowed; }
 
   .status-bar {
     font-size: 0.85rem; color: var(--ink-muted); font-weight: 500;
@@ -198,11 +217,17 @@
   /* ── 관리자 UI ── */
   .admin-btn {
     position: fixed; bottom: 28px; right: 28px;
-    background: var(--muted); color: var(--ink-soft); border: 1px solid var(--border);
-    border-radius: 6px; padding: 7px 14px; font-size: 0.78rem; font-weight: 600;
+    background: var(--krds-light-color-button-tertiary-fill);
+    color: var(--krds-light-color-text-basic);
+    border: 1px solid var(--krds-light-color-button-tertiary-border);
+    border-radius: 6px; padding: 8px 16px; font-size: 0.875rem; font-weight: 600;
     font-family: inherit; cursor: pointer; transition: all 0.15s;
   }
-  .admin-btn:hover { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .admin-btn:hover {
+    background: var(--krds-light-color-button-tertiary-fill-hover);
+    color: var(--krds-light-color-text-secondary);
+    border-color: var(--krds-light-color-border-secondary);
+  }
 
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);
@@ -217,25 +242,31 @@
   .modal h3 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; color: var(--ink); text-align: center; }
   .modal p { font-size: 0.8rem; color: var(--ink-muted); margin-bottom: 20px; line-height: 1.6; text-align: center; }
   .modal input[type="password"] {
-    width: 100%; border: 1px solid var(--border); border-radius: 6px;
+    width: 100%; border: 1px solid var(--krds-light-color-border-gray); border-radius: 6px;
     padding: 10px 12px; font-size: 0.88rem; font-family: inherit;
     outline: none; margin-bottom: 12px; transition: border-color 0.15s;
   }
-  .modal input[type="password"]:focus { border-color: var(--navy); }
+  .modal input[type="password"]:focus { border-color: var(--krds-light-color-border-secondary); }
   .modal-btns { display: flex; gap: 8px; flex-direction: column; }
   .modal-confirm {
-    width: 100%; background: var(--navy); color: #fff; border-radius: 6px;
-    border: none; padding: 10px; font-family: inherit; font-weight: 600;
-    font-size: 0.85rem; cursor: pointer; transition: background 0.15s;
+    width: 100%;
+    background: var(--krds-light-color-button-primary-fill);
+    color: var(--krds-light-color-text-inverse-static);
+    border-radius: 6px; border: none; padding: 10px;
+    font-family: inherit; font-weight: 600; font-size: 0.85rem;
+    cursor: pointer; transition: background 0.15s;
   }
-  .modal-confirm:hover { background: var(--navy-l); }
-  .modal-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
+  .modal-confirm:hover { background: var(--krds-light-color-button-primary-fill-hover); }
+  .modal-confirm:disabled { background: var(--krds-light-color-button-disabled-fill); color: var(--krds-light-color-text-disabled-on); cursor: not-allowed; }
   .modal-cancel {
-    width: 100%; background: transparent; color: var(--ink-muted); border-radius: 6px;
-    border: 1px solid var(--border); padding: 10px; font-family: inherit; font-weight: 600;
+    width: 100%; background: transparent;
+    color: var(--krds-light-color-text-subtle);
+    border-radius: 6px;
+    border: 1px solid var(--krds-light-color-button-tertiary-border);
+    padding: 10px; font-family: inherit; font-weight: 600;
     font-size: 0.85rem; cursor: pointer; transition: background 0.15s;
   }
-  .modal-cancel:hover { background: var(--muted); color: var(--ink); }
+  .modal-cancel:hover { background: var(--krds-light-color-button-tertiary-fill-hover); color: var(--ink); }
   .modal-msg { font-size: 0.78rem; margin-top: 10px; min-height: 18px; font-weight: 500; text-align: center; }
   .modal-msg.ok  { color: var(--success); }
   .modal-msg.err { color: var(--danger); }

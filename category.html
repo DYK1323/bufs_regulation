@@ -6,22 +6,23 @@
 <title>규정 목록</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+<link rel="stylesheet" href="krds_tokens.css">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --navy:      #0d4a7a;
-    --navy-l:    #1a6aaa;
+    --navy:      var(--krds-color-light-secondary-70);  /* #063A74 */
+    --navy-l:    var(--krds-color-light-secondary-60);  /* #1C589C */
     --gold:      #FDB71A;
     --gold-h:    #E59A00;
-    --ink:       #1a1a1a;
-    --ink-soft:  #4B5563;
-    --ink-muted: #6B7280;
-    --paper:     #ffffff;
-    --muted:     #f1f3f5;
-    --card:      #ffffff;
-    --border:    #e5e7eb;
-    --success:   #059669;
-    --danger:    #DC2626;
+    --ink:       var(--krds-color-light-gray-90);       /* #1E2124 */
+    --ink-soft:  var(--krds-color-light-gray-60);       /* #58616A */
+    --ink-muted: var(--krds-color-light-gray-50);       /* #6D7882 */
+    --paper:     var(--krds-color-light-gray-0);
+    --muted:     var(--krds-color-light-gray-5);
+    --card:      var(--krds-color-light-gray-0);
+    --border:    var(--krds-color-light-gray-20);       /* #CDD1D5 */
+    --success:   var(--krds-color-light-success-50);
+    --danger:    var(--krds-color-light-danger-50);
   }
   html, body {
     min-height: 100%; background: var(--paper); color: var(--ink);
@@ -46,25 +47,36 @@
     text-decoration: none; white-space: nowrap; flex-shrink: 0;
   }
   .site-logo img { height: 1.5em; width: auto; }
-  .site-nav { display: flex; gap: 24px; align-items: center; }
+  .site-nav { display: flex; gap: 4px; align-items: center; }
   .site-nav a {
-    font-size: 0.9rem; font-weight: 500; color: #4B5563;
-    text-decoration: none; white-space: nowrap; transition: color 0.15s;
+    font-size: 0.9rem; font-weight: 700;
+    color: var(--krds-light-color-text-subtle);
+    text-decoration: none; white-space: nowrap;
+    padding: 6px 12px; border-radius: 6px;
+    transition: background 0.15s, color 0.15s;
   }
-  .site-nav a:hover { color: var(--ink); }
-  .site-nav a.active { color: var(--gold); font-weight: 700; }
+  .site-nav a:hover {
+    color: var(--krds-light-color-text-secondary);
+    background: var(--krds-light-color-action-secondary-hover);
+  }
+  .site-nav a.active {
+    color: var(--krds-light-color-text-secondary);
+    background: var(--krds-light-color-action-secondary-selected);
+    font-weight: 700;
+  }
   .header-search-form { position: relative; width: 240px; flex-shrink: 0; }
   .header-search-icon {
     position: absolute; left: 0; top: 50%; transform: translateY(-50%);
     width: 16px; height: 16px; color: #9ca3af; pointer-events: none;
   }
   .header-search-input {
-    width: 100%; border: none; border-bottom: 1px solid #d1d5db;
+    width: 100%; border: none;
+    border-bottom: 1px solid var(--krds-light-color-border-gray-light);
     padding: 6px 4px 6px 22px; font-size: 0.88rem; font-family: inherit;
     background: transparent; color: var(--ink); outline: none; transition: border-color 0.15s;
   }
-  .header-search-input:focus { border-bottom-color: #6b7280; }
-  .header-search-input::placeholder { color: #9CA3AF; }
+  .header-search-input:focus { border-bottom-color: var(--krds-light-color-border-secondary); }
+  .header-search-input::placeholder { color: var(--krds-light-color-text-disabled); }
 
   /* ── 본문 레이아웃 ── */
   .main-wrap { max-width: 1280px; margin: 0 auto; padding: 48px 32px 100px; }
@@ -74,16 +86,37 @@
   .page-title { font-size: 1.875rem; font-weight: 700; color: var(--ink); font-family: "Noto Sans KR", sans-serif; margin-bottom: 4px; }
   .page-subtitle { font-size: 0.9rem; color: var(--ink-muted); }
 
-  /* ── 서브탭 (학사규정) ── */
-  .sub-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 24px; overflow-x: auto; }
-  .sub-tab {
-    padding: 10px 20px; font-size: 0.88rem; font-weight: 500; color: var(--ink-muted);
-    cursor: pointer; white-space: nowrap; background: none; border: none;
-    border-bottom: 2px solid transparent; margin-bottom: -1px; font-family: inherit;
-    transition: all 0.15s;
+  /* ── 서브탭 (학사규정) ── KRDS line tab style ── */
+  .sub-tabs {
+    display: flex; gap: 0;
+    border-bottom: 1px solid var(--krds-light-color-border-gray);
+    margin-bottom: 24px; overflow-x: auto;
   }
-  .sub-tab:hover { color: var(--ink); }
-  .sub-tab.active { color: var(--gold); border-bottom-color: var(--gold); font-weight: 700; }
+  .sub-tab {
+    position: relative;
+    padding: 10px 20px; font-size: 0.9375rem; font-weight: 700;
+    color: var(--krds-light-color-text-subtle);
+    cursor: pointer; white-space: nowrap; background: none; border: none;
+    margin-bottom: -1px; font-family: inherit;
+    transition: color 0.15s, background 0.15s;
+    border-radius: 6px 6px 0 0;
+  }
+  .sub-tab::after {
+    content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
+    height: 2px; background: transparent;
+    transition: background 0.15s;
+  }
+  .sub-tab:hover {
+    color: var(--krds-light-color-text-secondary);
+    background: var(--krds-light-color-action-secondary-hover);
+  }
+  .sub-tab.active {
+    color: var(--krds-light-color-text-secondary);
+    font-weight: 700;
+  }
+  .sub-tab.active::after {
+    background: var(--krds-light-color-action-secondary-active);
+  }
 
   /* ── 규정 테이블 ── */
   .reg-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
@@ -112,14 +145,20 @@
 
   .no-result { text-align: center; padding: 60px 0; color: var(--ink-muted); font-size: 0.9rem; }
 
-  /* ── 관리자 버튼 ── */
+  /* ── 돌아가기 버튼 ── KRDS tertiary style ── */
   .admin-btn {
     position: fixed; bottom: 28px; right: 28px;
-    background: var(--muted); color: var(--ink-soft); border: 1px solid var(--border);
-    border-radius: 6px; padding: 7px 14px; font-size: 0.78rem; font-weight: 600;
+    background: var(--krds-light-color-button-tertiary-fill);
+    color: var(--krds-light-color-text-basic);
+    border: 1px solid var(--krds-light-color-button-tertiary-border);
+    border-radius: 6px; padding: 8px 16px; font-size: 0.875rem; font-weight: 600;
     font-family: inherit; cursor: pointer; transition: all 0.15s;
   }
-  .admin-btn:hover { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .admin-btn:hover {
+    background: var(--krds-light-color-button-tertiary-fill-hover);
+    color: var(--krds-light-color-text-secondary);
+    border-color: var(--krds-light-color-border-secondary);
+  }
 
   @media (max-width: 680px) {
     .site-nav, .header-search-form { display: none; }
