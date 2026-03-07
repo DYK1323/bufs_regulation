@@ -1,8 +1,8 @@
 """
-웹사이트 첨부파일 크롤러
-- GUI로 URL 입력 및 저장 폴더 선택
-- 게시판 목록 자동 탐지
-- 모든 게시글의 첨부파일 다운로드
+BUFS 규정집 첨부파일 크롤러 (GNUBOARD 전용)
+대상: https://www.bufs.ac.kr (GNUBOARD 기반)
+게시판 패턴: /bbs/board.php?bo_table=reg_boardN
+다운로드 패턴: /bbs/download.php?bo_table=...&wr_id=...&no=...
 """
 
 import os
@@ -11,7 +11,7 @@ import time
 import threading
 import urllib.parse
 import tkinter as tk
-from tkinter import ttk, filedialog, messagebox, scrolledtext
+from tkinter import ttk, filedialog, scrolledtext, messagebox
 
 import requests
 from bs4 import BeautifulSoup
@@ -26,365 +26,388 @@ HEADERS = {
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/120.0.0.0 Safari/537.36"
     ),
-    "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8,en;q=0.7",
+    "Accept-Language": "ko-KR,ko;q=0.9,en-US;q=0.8",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Referer": "",   # 요청마다 동적으로 채움
 }
 REQUEST_TIMEOUT = 30
-DELAY_BETWEEN_REQUESTS = 0.5   # 서버 부하 방지 (초)
+DELAY_SECONDS = 0.5     # 서버 부하 방지
 MAX_RETRIES = 3
 
 
 # ────────────────────────────────────────────────────────────────
-# 크롤러 핵심 로직
+# 크롤러
 # ────────────────────────────────────────────────────────────────
-class Crawler:
-    def __init__(self, base_url: str, save_dir: str, log_callback, progress_callback):
+class GnuBoardCrawler:
+    def __init__(self, base_url: str, save_dir: str, log_fn, progress_fn):
         self.base_url = base_url.rstrip("/")
         self.save_dir = save_dir
-        self.log = log_callback
-        self.set_progress = progress_callback
-        self.session = requests.Session()
-        self.session.headers.update(HEADERS)
+        self.log = log_fn
+        self.set_progress = progress_fn
         self.stop_flag = False
 
-        # 사이트 유형 자동 탐지에 사용할 게시판 URL 패턴
-        self.board_patterns = [
-            # GNUBOARD / 영카트
-            r"/bbs/board\.php\?bo_table=\w+",
-            # XpressEngine (XE)
-            r"/index\.php\?mid=\w+",
-            # 자체 CMS (예: /board/list, /board/view 등)
-            r"/board/[^?#]+",
-            r"/bbslist/[^?#]+",
-            r"/cop/bbs/[^?#]+",
-        ]
+        self.session = requests.Session()
+        self.session.headers.update(HEADERS)
 
     # ── 공통 유틸 ────────────────────────────────────────────────
-    def get(self, url: str, **kwargs) -> requests.Response | None:
+
+    def get(self, url: str, referer: str = "") -> requests.Response | None:
+        headers = {"Referer": referer or self.base_url}
         for attempt in range(1, MAX_RETRIES + 1):
             try:
-                resp = self.session.get(url, timeout=REQUEST_TIMEOUT, **kwargs)
+                resp = self.session.get(url, headers=headers, timeout=REQUEST_TIMEOUT)
                 resp.raise_for_status()
                 return resp
             except requests.RequestException as e:
-                self.log(f"  [재시도 {attempt}/{MAX_RETRIES}] {url} → {e}")
+                self.log(f"  [재시도 {attempt}/{MAX_RETRIES}] {e}")
                 if attempt < MAX_RETRIES:
                     time.sleep(2 ** attempt)
+        self.log(f"  ❌ 요청 실패: {url}")
         return None
 
-    def safe_filename(self, name: str) -> str:
-        """파일 이름에서 OS 금지 문자 제거"""
-        return re.sub(r'[\\/:*?"<>|]', "_", name).strip()
-
-    def make_absolute(self, href: str) -> str:
+    def abs(self, href: str) -> str:
         return urllib.parse.urljoin(self.base_url, href)
 
-    # ── 1단계: 메인 페이지에서 게시판 목록 탐지 ─────────────────
-    def find_boards(self) -> list[dict]:
-        """메인 페이지 + 상단 메뉴에서 게시판 URL을 수집"""
-        self.log(f"[1단계] 메인 페이지 접속: {self.base_url}")
-        resp = self.get(self.base_url)
-        if not resp:
-            self.log("  ❌ 메인 페이지 접속 실패")
-            return []
+    def safe_name(self, s: str) -> str:
+        return re.sub(r'[\\/:*?"<>|]', "_", s).strip(" .")
 
-        soup = BeautifulSoup(resp.text, "html.parser")
+    # ── 1단계: 게시판 목록 탐지 ──────────────────────────────────
+
+    def find_boards(self) -> list[dict]:
+        """
+        메인 페이지 + 사이트 전체 탐색으로 reg_board* 테이블을 수집.
+        못 찾으면 reg_board1~20 순차 시도.
+        """
+        self.log(f"[1단계] 게시판 탐색: {self.base_url}")
         boards = {}
 
-        # <a> 태그 전체 스캔
-        for a in soup.find_all("a", href=True):
-            href = a["href"].strip()
-            abs_url = self.make_absolute(href)
-            # 같은 도메인인지 확인
-            if urllib.parse.urlparse(abs_url).netloc != urllib.parse.urlparse(self.base_url).netloc:
-                continue
-            for pat in self.board_patterns:
-                if re.search(pat, abs_url):
-                    # 게시판 목록 URL만 (view 페이지 제외)
-                    if not re.search(r"(wr_id|view|read|detail|content)=", abs_url):
-                        label = a.get_text(strip=True) or abs_url
-                        if abs_url not in boards:
-                            boards[abs_url] = label
-                        break
+        # 메인 페이지에서 링크 수집
+        resp = self.get(self.base_url)
+        if resp:
+            boards.update(self._extract_board_links(resp.text))
 
-        # 탐지 실패 시 regulation.bufs.ac.kr 전용 경험적 패턴 시도
+        # 탐지 실패 시 순차 시도
         if not boards:
-            boards = self._find_boards_fallback(soup)
+            self.log("  → 자동 탐지 실패. reg_board1~20 순차 확인 중...")
+            boards = self._probe_boards(prefix="reg_board", count=20)
 
-        result = [{"url": url, "name": name} for url, name in boards.items()]
-        self.log(f"  → 게시판 {len(result)}개 발견")
+        result = [{"bo_table": k, "name": v, "url": self._board_url(k)}
+                  for k, v in boards.items()]
+        self.log(f"  → {len(result)}개 게시판 발견")
         for b in result:
-            self.log(f"     • {b['name']}  ({b['url']})")
+            self.log(f"     • {b['name']}  (bo_table={b['bo_table']})")
         return result
 
-    def _find_boards_fallback(self, soup: BeautifulSoup) -> dict:
-        """
-        일반 패턴으로 탐지 실패 시 사용하는 보완 탐지:
-        네비게이션 메뉴, 사이드바 등에서 /로 시작하는 링크 중
-        '규정', '규칙', '지침', '규약' 등의 키워드가 포함된 것을 수집
-        """
-        self.log("  [보완 탐지] 키워드 기반 게시판 탐색 중...")
+    def _extract_board_links(self, html: str) -> dict:
+        """HTML에서 bo_table=reg_board* 링크와 이름을 추출"""
+        soup = BeautifulSoup(html, "html.parser")
         boards = {}
-        keywords = ["규정", "규칙", "지침", "훈령", "예규", "고시", "공고", "운영", "학칙"]
         for a in soup.find_all("a", href=True):
-            href = a["href"].strip()
-            abs_url = self.make_absolute(href)
-            if urllib.parse.urlparse(abs_url).netloc != urllib.parse.urlparse(self.base_url).netloc:
-                continue
-            text = a.get_text(strip=True)
-            if any(kw in text for kw in keywords) and len(text) < 30:
-                if not re.search(r"(wr_id|view|read|detail|content|javascript)", abs_url):
-                    boards[abs_url] = text
+            href = a["href"]
+            m = re.search(r"bo_table=(reg_board\w+)", href)
+            if m:
+                bo_table = m.group(1)
+                # wr_id가 없는 것(= 게시판 목록 링크)만
+                if "wr_id" not in href and bo_table not in boards:
+                    label = a.get_text(strip=True) or bo_table
+                    boards[bo_table] = label
         return boards
 
-    # ── 2단계: 게시판에서 게시글 목록 수집 ──────────────────────
-    def get_post_urls(self, board_url: str, board_name: str) -> list[str]:
-        """게시판의 모든 페이지를 순회하며 게시글 URL 수집"""
-        post_urls = []
-        page_url = board_url
-        visited_pages = set()
-        page_num = 1
-
-        while page_url and not self.stop_flag:
-            if page_url in visited_pages:
+    def _probe_boards(self, prefix: str, count: int) -> dict:
+        """reg_board1 ~ reg_boardN 순차 시도"""
+        boards = {}
+        for i in range(1, count + 1):
+            if self.stop_flag:
                 break
-            visited_pages.add(page_url)
+            bo_table = f"{prefix}{i}"
+            url = self._board_url(bo_table)
+            resp = self.get(url)
+            if not resp:
+                continue
+            # 빈 페이지 / 404 유사 응답 필터
+            if "존재하지 않는" in resp.text or "없는 게시판" in resp.text:
+                continue
+            # 게시판 제목 추출
+            soup = BeautifulSoup(resp.text, "html.parser")
+            title = self._extract_board_title(soup) or bo_table
+            boards[bo_table] = title
+            self.log(f"    ✔ {bo_table}: {title}")
+            time.sleep(DELAY_SECONDS)
+        return boards
 
-            self.log(f"  [게시글 목록] {board_name} - {page_num}페이지")
-            resp = self.get(page_url)
+    def _board_url(self, bo_table: str, page: int = 1) -> str:
+        url = f"{self.base_url}/bbs/board.php?bo_table={bo_table}"
+        if page > 1:
+            url += f"&page={page}"
+        return url
+
+    def _extract_board_title(self, soup: BeautifulSoup) -> str:
+        """GNUBOARD 게시판 제목 추출"""
+        for sel in ("#bo_wr_list_head h2", ".bo_tit", "h2.bo_tit", "#board h2", "h1"):
+            tag = soup.select_one(sel)
+            if tag:
+                return tag.get_text(strip=True)
+        return ""
+
+    # ── 2단계: 게시글 목록 수집 ──────────────────────────────────
+
+    def get_post_ids(self, bo_table: str, board_name: str) -> list[int]:
+        """게시판의 모든 페이지를 순회하며 wr_id 수집"""
+        self.log(f"\n[2단계] 게시글 목록 수집: {board_name}")
+        wr_ids = []
+        page = 1
+
+        while not self.stop_flag:
+            url = self._board_url(bo_table, page)
+            resp = self.get(url, referer=self._board_url(bo_table, max(1, page - 1)))
             if not resp:
                 break
 
             soup = BeautifulSoup(resp.text, "html.parser")
-            found = self._extract_post_urls(soup, board_url)
-            post_urls.extend(found)
+            found = self._extract_wr_ids(soup, bo_table)
 
-            next_url = self._find_next_page(soup, page_url, page_num)
-            page_url = next_url
-            page_num += 1
-            time.sleep(DELAY_BETWEEN_REQUESTS)
+            if not found:
+                self.log(f"  → {page}페이지: 게시글 없음 (종료)")
+                break
 
-        return list(dict.fromkeys(post_urls))  # 중복 제거
+            self.log(f"  → {page}페이지: {len(found)}개 게시글")
+            wr_ids.extend(found)
 
-    def _extract_post_urls(self, soup: BeautifulSoup, board_url: str) -> list[str]:
-        """게시글 상세 페이지 URL 추출"""
-        urls = []
-        parsed_board = urllib.parse.urlparse(board_url)
+            if not self._has_next_page(soup, page):
+                break
 
+            page += 1
+            time.sleep(DELAY_SECONDS)
+
+        # 중복 제거, 순서 유지
+        seen = set()
+        unique = []
+        for wid in wr_ids:
+            if wid not in seen:
+                seen.add(wid)
+                unique.append(wid)
+        self.log(f"  → 총 {len(unique)}개 게시글 수집")
+        return unique
+
+    def _extract_wr_ids(self, soup: BeautifulSoup, bo_table: str) -> list[int]:
+        """현재 페이지에서 wr_id 값 추출"""
+        ids = []
         for a in soup.find_all("a", href=True):
-            href = a["href"].strip()
-            abs_url = self.make_absolute(href)
-            parsed = urllib.parse.urlparse(abs_url)
+            href = a["href"]
+            m = re.search(rf"bo_table={re.escape(bo_table)}&wr_id=(\d+)", href)
+            if m:
+                ids.append(int(m.group(1)))
+        return ids
 
-            if parsed.netloc != parsed_board.netloc:
-                continue
-
-            qs = urllib.parse.parse_qs(parsed.query)
-
-            # GNUBOARD: wr_id 파라미터
-            if "wr_id" in qs:
-                urls.append(abs_url)
-            # XE: document_srl 파라미터
-            elif "document_srl" in qs:
-                urls.append(abs_url)
-            # 경로 기반 상세 페이지: /board/view/123, /bbs/read/123 등
-            elif re.search(r"/(view|read|detail|content|post)/\d+", parsed.path):
-                urls.append(abs_url)
-            # 숫자 ID가 경로 마지막에 오는 경우
-            elif re.search(r"/\d+$", parsed.path) and parsed.path != parsed_board.path:
-                urls.append(abs_url)
-
-        return urls
-
-    def _find_next_page(self, soup: BeautifulSoup, current_url: str, current_page: int) -> str | None:
-        """다음 페이지 URL 탐지"""
-        parsed = urllib.parse.urlparse(current_url)
-        qs = urllib.parse.parse_qs(parsed.query)
-
-        # 페이지네이션 링크 탐색
+    def _has_next_page(self, soup: BeautifulSoup, current_page: int) -> bool:
+        """다음 페이지 존재 여부 확인"""
+        # GNUBOARD 페이지네이션: .pg_wrap 또는 #pg_wrap 안에 페이지 링크
         for a in soup.find_all("a", href=True):
+            href = a["href"]
+            m = re.search(r"page=(\d+)", href)
+            if m and int(m.group(1)) == current_page + 1:
+                return True
+        # "다음" 텍스트 링크
+        for a in soup.find_all("a"):
             text = a.get_text(strip=True)
-            href = a["href"].strip()
-
-            # "다음", ">" 등의 텍스트로 다음 페이지 링크 탐지
             if text in ("다음", "다음페이지", "next", ">", "»"):
-                abs_url = self.make_absolute(href)
-                if abs_url != current_url:
-                    return abs_url
-
-        # 쿼리 파라미터 방식 페이지 증가 시도 (page, pg, p, offset 등)
-        for param in ("page", "pg", "p", "pageIndex", "pageNo", "cur_page"):
-            if param in qs:
-                next_qs = qs.copy()
-                next_val = int(qs[param][0]) + 1
-                next_qs[param] = [str(next_val)]
-                new_query = urllib.parse.urlencode(next_qs, doseq=True)
-                next_url = parsed._replace(query=new_query).geturl()
-                # 다음 페이지가 현재 페이지와 실제로 다른지 확인
-                resp = self.get(next_url)
-                if resp and resp.url != current_url:
-                    # 게시글이 실제로 있는지 확인
-                    test_soup = BeautifulSoup(resp.text, "html.parser")
-                    if self._extract_post_urls(test_soup, current_url):
-                        return next_url
-                return None
-
-        return None
+                return True
+        return False
 
     # ── 3단계: 게시글에서 첨부파일 URL 수집 ─────────────────────
-    def get_attachments(self, post_url: str) -> list[dict]:
-        """게시글 페이지에서 첨부파일 링크 추출"""
-        resp = self.get(post_url)
+
+    def get_attachments(self, bo_table: str, wr_id: int) -> list[dict]:
+        """게시글 상세 페이지에서 download.php 링크 추출"""
+        post_url = (
+            f"{self.base_url}/bbs/board.php"
+            f"?bo_table={bo_table}&wr_id={wr_id}"
+        )
+        resp = self.get(post_url, referer=self._board_url(bo_table))
         if not resp:
             return []
 
         soup = BeautifulSoup(resp.text, "html.parser")
+
+        # 게시글 제목 (폴더명용)
+        title = self._extract_post_title(soup) or f"post_{wr_id}"
+
         attachments = []
         seen = set()
 
         for a in soup.find_all("a", href=True):
             href = a["href"].strip()
-            abs_url = self.make_absolute(href)
+            abs_url = self.abs(href)
 
+            # GNUBOARD 다운로드 링크 패턴
+            if "/bbs/download.php" not in abs_url:
+                continue
             if abs_url in seen:
                 continue
+            seen.add(abs_url)
 
-            # 첨부파일 판별 기준
-            is_attachment = (
-                # 파일 다운로드 URL 패턴
-                re.search(r"/(download|attach|file|atch|filedown|dext5down|dn)\b", abs_url, re.I)
-                or re.search(r"\.(hwp|hwpx|pdf|doc|docx|xls|xlsx|ppt|pptx|zip|alz|egg|7z|txt)(\?|$)", abs_url, re.I)
-                or re.search(r"(fileId|attachId|file_id|atch_file_id|seq)=", abs_url)
-            )
+            # no= 파라미터 확인
+            qs = urllib.parse.parse_qs(urllib.parse.urlparse(abs_url).query)
+            if "no" not in qs:
+                continue
 
-            if is_attachment:
-                filename = self._guess_filename(a, abs_url)
-                attachments.append({"url": abs_url, "filename": filename})
-                seen.add(abs_url)
+            # 파일명 후보: 링크 텍스트 → qs → fallback
+            filename = self._guess_attachment_name(a, qs)
+            attachments.append({
+                "url": abs_url,
+                "filename": filename,
+                "post_title": title,
+            })
 
         return attachments
 
-    def _guess_filename(self, a_tag, url: str) -> str:
-        """첨부파일 이름 추정"""
+    def _extract_post_title(self, soup: BeautifulSoup) -> str:
+        for sel in (".bo_v_tit h2", ".bo_v_con h2", "#bo_v_title", "h2.bo_v_tit", "h2"):
+            tag = soup.select_one(sel)
+            if tag:
+                return self.safe_name(tag.get_text(strip=True))
+        return ""
+
+    def _guess_attachment_name(self, a_tag, qs: dict) -> str:
         # 링크 텍스트 우선
         text = a_tag.get_text(strip=True)
-        if text and not text.startswith("http") and len(text) < 200:
-            # 이미 확장자가 있으면 그대로 사용
-            if re.search(r"\.\w{2,5}$", text):
-                return self.safe_filename(text)
-            # 링크 텍스트 + URL에서 확장자 보완
-            ext_match = re.search(r"\.(\w{2,5})(\?|$)", url)
-            if ext_match:
-                return self.safe_filename(f"{text}.{ext_match.group(1)}")
-            return self.safe_filename(text)
-
-        # URL 마지막 경로 세그먼트
-        path = urllib.parse.urlparse(url).path
-        filename = path.split("/")[-1]
-        if filename:
-            return self.safe_filename(urllib.parse.unquote(filename))
-
-        return "attachment"
+        if text and len(text) < 200 and "." in text:
+            return self.safe_name(text)
+        # qs에서 파일명 힌트가 있으면
+        for key in ("file_name", "fname", "name"):
+            if key in qs:
+                return self.safe_name(urllib.parse.unquote(qs[key][0]))
+        # no 번호를 파일명으로
+        no = qs.get("no", ["0"])[0]
+        return f"attachment_{no}"
 
     # ── 4단계: 파일 다운로드 ─────────────────────────────────────
-    def download_file(self, url: str, dest_dir: str, filename: str) -> bool:
-        os.makedirs(dest_dir, exist_ok=True)
-        filepath = os.path.join(dest_dir, filename)
 
-        # 이름 충돌 처리
-        base, ext = os.path.splitext(filepath)
-        counter = 1
-        while os.path.exists(filepath):
-            filepath = f"{base}_{counter}{ext}"
-            counter += 1
+    def download_file(self, url: str, dest_dir: str, hint_name: str) -> bool:
+        os.makedirs(dest_dir, exist_ok=True)
 
         try:
-            resp = self.session.get(url, timeout=REQUEST_TIMEOUT, stream=True)
+            resp = self.session.get(
+                url,
+                headers={"Referer": self.base_url},
+                timeout=REQUEST_TIMEOUT,
+                stream=True,
+            )
             resp.raise_for_status()
-
-            # Content-Disposition에서 파일명 재추출 시도
-            cd = resp.headers.get("Content-Disposition", "")
-            cd_match = re.search(r'filename[*]?=["\']?([^"\';\r\n]+)', cd)
-            if cd_match:
-                raw_name = cd_match.group(1).strip()
-                # RFC 5987 인코딩 처리
-                if raw_name.startswith("UTF-8''"):
-                    raw_name = urllib.parse.unquote(raw_name[7:])
-                else:
-                    try:
-                        raw_name = raw_name.encode("latin-1").decode("utf-8")
-                    except (UnicodeDecodeError, UnicodeEncodeError):
-                        pass
-                new_name = self.safe_filename(raw_name)
-                if new_name:
-                    filepath = os.path.join(dest_dir, new_name)
-                    base, ext = os.path.splitext(filepath)
-                    counter = 1
-                    while os.path.exists(filepath):
-                        filepath = f"{base}_{counter}{ext}"
-                        counter += 1
-
-            with open(filepath, "wb") as f:
-                for chunk in resp.iter_content(chunk_size=8192):
-                    f.write(chunk)
-
-            size = os.path.getsize(filepath)
-            self.log(f"    ✅ 저장: {os.path.basename(filepath)}  ({size:,} bytes)")
-            return True
-
-        except Exception as e:
-            self.log(f"    ❌ 다운로드 실패: {url} → {e}")
+        except requests.RequestException as e:
+            self.log(f"    ❌ 다운로드 실패: {e}")
             return False
 
+        # Content-Disposition에서 실제 파일명 추출
+        filename = self._parse_filename(resp.headers, hint_name)
+        filepath = self._unique_path(dest_dir, filename)
+
+        try:
+            with open(filepath, "wb") as f:
+                for chunk in resp.iter_content(8192):
+                    f.write(chunk)
+            size = os.path.getsize(filepath)
+            self.log(f"    ✅ {os.path.basename(filepath)}  ({size:,} bytes)")
+            return True
+        except OSError as e:
+            self.log(f"    ❌ 저장 실패: {e}")
+            return False
+
+    def _parse_filename(self, headers: dict, fallback: str) -> str:
+        cd = headers.get("Content-Disposition", "")
+        if not cd:
+            return fallback
+
+        # RFC 5987: filename*=UTF-8''...
+        m = re.search(r"filename\*=UTF-8''(.+)", cd, re.I)
+        if m:
+            return self.safe_name(urllib.parse.unquote(m.group(1).strip()))
+
+        # 일반 filename="..."
+        m = re.search(r'filename=["\']?([^"\';\r\n]+)', cd, re.I)
+        if m:
+            raw = m.group(1).strip().strip('"\'')
+            # EUC-KR / latin-1 → UTF-8 디코딩 시도
+            for enc in ("utf-8", "euc-kr", "cp949"):
+                try:
+                    decoded = raw.encode("latin-1").decode(enc)
+                    return self.safe_name(decoded)
+                except (UnicodeDecodeError, UnicodeEncodeError):
+                    continue
+            return self.safe_name(raw)
+
+        return fallback
+
+    def _unique_path(self, directory: str, filename: str) -> str:
+        base, ext = os.path.splitext(filename)
+        path = os.path.join(directory, filename)
+        counter = 1
+        while os.path.exists(path):
+            path = os.path.join(directory, f"{base}_{counter}{ext}")
+            counter += 1
+        return path
+
     # ── 메인 실행 ────────────────────────────────────────────────
+
     def run(self):
         self.stop_flag = False
         total_files = 0
+        failed_files = 0
 
         boards = self.find_boards()
         if not boards:
-            self.log("\n게시판을 찾지 못했습니다. URL을 확인해 주세요.")
+            self.log("❌ 게시판을 찾지 못했습니다. URL과 네트워크 상태를 확인하세요.")
             return
 
+        total_boards = len(boards)
         for b_idx, board in enumerate(boards):
             if self.stop_flag:
                 break
 
-            board_name = self.safe_filename(board["name"]) or f"board_{b_idx+1}"
-            board_dir = os.path.join(self.save_dir, board_name)
+            bo_table = board["bo_table"]
+            board_name = board["name"]
+            board_dir = os.path.join(self.save_dir, self.safe_name(board_name) or bo_table)
+
             self.log(f"\n{'='*60}")
-            self.log(f"[게시판] {board['name']}")
+            self.log(f"[게시판 {b_idx+1}/{total_boards}] {board_name}  (bo_table={bo_table})")
 
-            post_urls = self.get_post_urls(board["url"], board["name"])
-            self.log(f"  → 게시글 {len(post_urls)}개")
+            wr_ids = self.get_post_ids(bo_table, board_name)
+            total_posts = len(wr_ids)
 
-            for p_idx, post_url in enumerate(post_urls):
+            for p_idx, wr_id in enumerate(wr_ids):
                 if self.stop_flag:
                     break
 
-                self.log(f"\n  [게시글 {p_idx+1}/{len(post_urls)}] {post_url}")
-                attachments = self.get_attachments(post_url)
+                self.log(f"\n  [게시글 {p_idx+1}/{total_posts}] wr_id={wr_id}")
+                attachments = self.get_attachments(bo_table, wr_id)
 
                 if not attachments:
-                    self.log("    첨부파일 없음")
+                    self.log("    → 첨부파일 없음")
                 else:
-                    self.log(f"    첨부파일 {len(attachments)}개")
-                    post_dir = os.path.join(board_dir, f"post_{p_idx+1:04d}")
+                    self.log(f"    → 첨부파일 {len(attachments)}개")
+                    # 게시글 제목을 폴더명으로
+                    post_title = attachments[0]["post_title"]
+                    post_dir = os.path.join(
+                        board_dir,
+                        f"{p_idx+1:04d}_{post_title}"[:80]  # 경로 길이 제한
+                    )
                     for att in attachments:
                         if self.stop_flag:
                             break
                         ok = self.download_file(att["url"], post_dir, att["filename"])
                         if ok:
                             total_files += 1
+                        else:
+                            failed_files += 1
 
-                # 진행률 업데이트
-                progress = ((b_idx * len(post_urls) + p_idx + 1) /
-                            max(len(boards) * len(post_urls), 1)) * 100
-                self.set_progress(min(progress, 100))
-                time.sleep(DELAY_BETWEEN_REQUESTS)
+                # 전체 진행률
+                done = b_idx * total_posts + p_idx + 1
+                total = total_boards * max(total_posts, 1)
+                self.set_progress(min(done / total * 100, 99))
+                time.sleep(DELAY_SECONDS)
 
         self.set_progress(100)
         self.log(f"\n{'='*60}")
-        self.log(f"완료! 총 {total_files}개 파일 다운로드")
+        self.log(f"완료!  성공: {total_files}개  실패: {failed_files}개")
         self.log(f"저장 위치: {self.save_dir}")
 
 
@@ -394,73 +417,80 @@ class Crawler:
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
-        self.title("웹사이트 첨부파일 크롤러")
+        self.title("BUFS 규정집 첨부파일 크롤러")
+        self.minsize(760, 580)
         self.resizable(True, True)
-        self.minsize(720, 560)
-        self._crawler: Crawler | None = None
+        self._crawler: GnuBoardCrawler | None = None
         self._thread: threading.Thread | None = None
         self._build_ui()
 
-    def _build_ui(self):
-        pad = {"padx": 10, "pady": 6}
+    # ── UI 구성 ──────────────────────────────────────────────────
 
-        # ── 입력 영역 ──
-        frame_top = ttk.LabelFrame(self, text="설정", padding=10)
-        frame_top.pack(fill="x", **pad)
-        frame_top.columnconfigure(1, weight=1)
+    def _build_ui(self):
+        pad = dict(padx=12, pady=6)
+
+        # 설정 영역
+        frm = ttk.LabelFrame(self, text="설정", padding=10)
+        frm.pack(fill="x", **pad)
+        frm.columnconfigure(1, weight=1)
 
         # URL
-        ttk.Label(frame_top, text="웹사이트 URL:").grid(row=0, column=0, sticky="w", pady=4)
-        self.url_var = tk.StringVar(value="https://regulation.bufs.ac.kr")
-        ttk.Entry(frame_top, textvariable=self.url_var, width=60).grid(
-            row=0, column=1, columnspan=2, sticky="ew", padx=(6, 0), pady=4
+        ttk.Label(frm, text="웹사이트 URL:").grid(row=0, column=0, sticky="w", pady=4)
+        self.url_var = tk.StringVar(value="https://www.bufs.ac.kr")
+        ttk.Entry(frm, textvariable=self.url_var).grid(
+            row=0, column=1, columnspan=2, sticky="ew", padx=(8, 0), pady=4
         )
 
         # 저장 폴더
-        ttk.Label(frame_top, text="저장 폴더:").grid(row=1, column=0, sticky="w", pady=4)
-        self.dir_var = tk.StringVar(value=os.path.expanduser("~/Downloads/crawled"))
-        ttk.Entry(frame_top, textvariable=self.dir_var, width=50).grid(
-            row=1, column=1, sticky="ew", padx=(6, 4), pady=4
+        ttk.Label(frm, text="저장 폴더:").grid(row=1, column=0, sticky="w", pady=4)
+        self.dir_var = tk.StringVar(value=os.path.expanduser("~/Downloads/bufs_regulations"))
+        ttk.Entry(frm, textvariable=self.dir_var).grid(
+            row=1, column=1, sticky="ew", padx=(8, 6), pady=4
         )
-        ttk.Button(frame_top, text="찾아보기...", command=self._choose_dir).grid(
+        ttk.Button(frm, text="찾아보기...", command=self._pick_dir).grid(
             row=1, column=2, sticky="e", pady=4
         )
 
-        # ── 버튼 영역 ──
-        frame_btn = ttk.Frame(self)
-        frame_btn.pack(fill="x", padx=10, pady=(0, 4))
-
-        self.btn_start = ttk.Button(frame_btn, text="▶  크롤링 시작", command=self._start)
-        self.btn_start.pack(side="left", padx=(0, 8))
-
-        self.btn_stop = ttk.Button(frame_btn, text="⏹  중지", command=self._stop, state="disabled")
-        self.btn_stop.pack(side="left")
-
-        ttk.Button(frame_btn, text="로그 지우기", command=self._clear_log).pack(side="right")
-
-        # ── 진행률 ──
-        self.progress_var = tk.DoubleVar()
-        self.progressbar = ttk.Progressbar(
-            self, variable=self.progress_var, maximum=100, mode="determinate"
+        # 게시판 테이블 접두사 (고급)
+        ttk.Label(frm, text="bo_table 접두사:").grid(row=2, column=0, sticky="w", pady=4)
+        self.prefix_var = tk.StringVar(value="reg_board")
+        ttk.Entry(frm, textvariable=self.prefix_var, width=20).grid(
+            row=2, column=1, sticky="w", padx=(8, 0), pady=4
         )
-        self.progressbar.pack(fill="x", padx=10, pady=(0, 4))
+        ttk.Label(frm, text="(자동 탐지 실패 시 사용)", foreground="gray").grid(
+            row=2, column=2, sticky="w", padx=6
+        )
 
-        self.progress_label = ttk.Label(self, text="대기 중", anchor="w")
-        self.progress_label.pack(fill="x", padx=10)
+        # 버튼
+        frm_btn = ttk.Frame(self)
+        frm_btn.pack(fill="x", padx=12, pady=(0, 4))
+        self.btn_start = ttk.Button(frm_btn, text="▶  크롤링 시작", command=self._start)
+        self.btn_start.pack(side="left", padx=(0, 8))
+        self.btn_stop = ttk.Button(frm_btn, text="⏹  중지", command=self._stop, state="disabled")
+        self.btn_stop.pack(side="left")
+        ttk.Button(frm_btn, text="로그 지우기", command=self._clear_log).pack(side="right")
 
-        # ── 로그 영역 ──
-        frame_log = ttk.LabelFrame(self, text="로그", padding=6)
-        frame_log.pack(fill="both", expand=True, padx=10, pady=(4, 10))
+        # 진행률
+        self.prog_var = tk.DoubleVar()
+        ttk.Progressbar(self, variable=self.prog_var, maximum=100).pack(
+            fill="x", padx=12, pady=(0, 2)
+        )
+        self.prog_label = ttk.Label(self, text="대기 중", anchor="w")
+        self.prog_label.pack(fill="x", padx=12)
 
+        # 로그
+        frm_log = ttk.LabelFrame(self, text="로그", padding=6)
+        frm_log.pack(fill="both", expand=True, padx=12, pady=(4, 12))
         self.log_box = scrolledtext.ScrolledText(
-            frame_log, state="disabled", wrap="word",
+            frm_log, state="disabled", wrap="word",
             font=("Consolas", 9) if os.name == "nt" else ("Monospace", 9),
-            bg="#1e1e1e", fg="#d4d4d4", insertbackground="white"
+            bg="#1e1e1e", fg="#d4d4d4",
         )
         self.log_box.pack(fill="both", expand=True)
 
-    # ── 이벤트 핸들러 ────────────────────────────────────────────
-    def _choose_dir(self):
+    # ── 이벤트 ───────────────────────────────────────────────────
+
+    def _pick_dir(self):
         d = filedialog.askdirectory(title="저장 폴더 선택", initialdir=self.dir_var.get())
         if d:
             self.dir_var.set(d)
@@ -468,7 +498,6 @@ class App(tk.Tk):
     def _start(self):
         url = self.url_var.get().strip()
         save_dir = self.dir_var.get().strip()
-
         if not url:
             messagebox.showwarning("입력 오류", "URL을 입력하세요.")
             return
@@ -478,38 +507,40 @@ class App(tk.Tk):
 
         self.btn_start.config(state="disabled")
         self.btn_stop.config(state="normal")
-        self.progress_var.set(0)
-        self._append_log(f"크롤링 시작: {url}\n저장 위치: {save_dir}\n{'─'*60}\n")
+        self.prog_var.set(0)
+        self._log(f"시작: {url}\n저장: {save_dir}\n{'─'*60}\n")
 
-        self._crawler = Crawler(
+        self._crawler = GnuBoardCrawler(
             base_url=url,
             save_dir=save_dir,
-            log_callback=self._append_log,
-            progress_callback=self._update_progress,
+            log_fn=self._log,
+            progress_fn=self._set_prog,
         )
-        self._thread = threading.Thread(target=self._run_crawler, daemon=True)
+        # bo_table 접두사 주입
+        self._crawler._probe_prefix = self.prefix_var.get().strip() or "reg_board"
+
+        self._thread = threading.Thread(target=self._run_thread, daemon=True)
         self._thread.start()
 
     def _stop(self):
         if self._crawler:
             self._crawler.stop_flag = True
             self.btn_stop.config(state="disabled")
-            self._append_log("\n⏹ 중지 요청... 현재 작업 완료 후 종료됩니다.")
+            self._log("\n⏹ 중지 요청됨 (현재 작업 후 종료)")
 
-    def _run_crawler(self):
+    def _run_thread(self):
         try:
             self._crawler.run()
         except Exception as e:
-            self._append_log(f"\n❌ 오류 발생: {e}")
+            self._log(f"\n❌ 오류: {e}")
         finally:
-            self.after(0, self._on_done)
+            self.after(0, self._done)
 
-    def _on_done(self):
+    def _done(self):
         self.btn_start.config(state="normal")
         self.btn_stop.config(state="disabled")
 
-    def _append_log(self, text: str):
-        """스레드 안전 로그 추가"""
+    def _log(self, text: str):
         def _do():
             self.log_box.config(state="normal")
             self.log_box.insert("end", text + "\n")
@@ -517,10 +548,10 @@ class App(tk.Tk):
             self.log_box.config(state="disabled")
         self.after(0, _do)
 
-    def _update_progress(self, value: float):
+    def _set_prog(self, val: float):
         def _do():
-            self.progress_var.set(value)
-            self.progress_label.config(text=f"진행률: {value:.1f}%")
+            self.prog_var.set(val)
+            self.prog_label.config(text=f"진행률: {val:.1f}%")
         self.after(0, _do)
 
     def _clear_log(self):
@@ -529,8 +560,6 @@ class App(tk.Tk):
         self.log_box.config(state="disabled")
 
 
-# ────────────────────────────────────────────────────────────────
-# 진입점
 # ────────────────────────────────────────────────────────────────
 if __name__ == "__main__":
     app = App()
