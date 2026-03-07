@@ -71,16 +71,16 @@
 
   /* ── 레이아웃 ── */
   .toc {
-    position: fixed; left: 0; top: 92px; width: var(--toc-w); height: calc(100vh - 92px);
+    position: fixed; left: 40px; top: 92px; width: var(--toc-w); height: calc(100vh - 92px);
     overflow-y: auto; background: var(--card); border-right: 1px solid var(--border);
     z-index: 100; padding: 24px 12px;
   }
   .toc::-webkit-scrollbar { width: 4px; }
   .toc::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-  .content-area { margin-left: var(--toc-w); min-height: 100vh; background: var(--paper); }
+  .content-area { margin-left: calc(40px + var(--toc-w)); padding-right: 40px; min-height: 100vh; background: var(--paper); }
   .site-footer {
-    margin-left: var(--toc-w);
-    padding: 16px 40px;
+    margin-left: calc(40px + var(--toc-w));
+    padding: 16px 40px 16px 0;
     background: var(--krds-light-color-surface-gray-subtle);
     border-top: 1px solid var(--krds-light-color-surface-gray-subtle);
     display: flex; align-items: center; justify-content: center;
