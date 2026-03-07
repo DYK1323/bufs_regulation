@@ -39,12 +39,14 @@ MAX_RETRIES = 3
 # 크롤러
 # ────────────────────────────────────────────────────────────────
 class GnuBoardCrawler:
-    def __init__(self, base_url: str, save_dir: str, log_fn, progress_fn):
+    def __init__(self, base_url: str, save_dir: str, log_fn, progress_fn,
+                 prefix: str = "reg_board"):
         self.base_url = base_url.rstrip("/")
         self.save_dir = save_dir
         self.log = log_fn
         self.set_progress = progress_fn
         self.stop_flag = False
+        self.prefix = prefix          # 이 접두사를 가진 게시판만 크롤링
 
         self.session = requests.Session()
         self.session.headers.update(HEADERS)
@@ -75,10 +77,10 @@ class GnuBoardCrawler:
 
     def find_boards(self) -> list[dict]:
         """
-        메인 페이지 + 사이트 전체 탐색으로 reg_board* 테이블을 수집.
-        못 찾으면 reg_board1~20 순차 시도.
+        메인 페이지에서 self.prefix 로 시작하는 게시판만 수집.
+        못 찾으면 prefix1~20 순차 시도.
         """
-        self.log(f"[1단계] 게시판 탐색: {self.base_url}")
+        self.log(f"[1단계] 게시판 탐색 (접두사: '{self.prefix}'): {self.base_url}")
         boards = {}
 
         # 메인 페이지에서 링크 수집
@@ -88,8 +90,8 @@ class GnuBoardCrawler:
 
         # 탐지 실패 시 순차 시도
         if not boards:
-            self.log("  → 자동 탐지 실패. reg_board1~20 순차 확인 중...")
-            boards = self._probe_boards(prefix="reg_board", count=20)
+            self.log(f"  → 자동 탐지 실패. {self.prefix}1~20 순차 확인 중...")
+            boards = self._probe_boards(prefix=self.prefix, count=20)
 
         result = [{"bo_table": k, "name": v, "url": self._board_url(k)}
                   for k, v in boards.items()]
@@ -99,12 +101,13 @@ class GnuBoardCrawler:
         return result
 
     def _extract_board_links(self, html: str) -> dict:
-        """HTML에서 bo_table=reg_board* 링크와 이름을 추출"""
+        """HTML에서 self.prefix 로 시작하는 bo_table 링크만 추출"""
         soup = BeautifulSoup(html, "html.parser")
         boards = {}
+        pat = re.compile(rf"bo_table=({re.escape(self.prefix)}\w*)")
         for a in soup.find_all("a", href=True):
             href = a["href"]
-            m = re.search(r"bo_table=(reg_board\w+)", href)
+            m = pat.search(href)
             if m:
                 bo_table = m.group(1)
                 # wr_id가 없는 것(= 게시판 목록 링크)만
@@ -510,14 +513,14 @@ class App(tk.Tk):
         self.prog_var.set(0)
         self._log(f"시작: {url}\n저장: {save_dir}\n{'─'*60}\n")
 
+        prefix = self.prefix_var.get().strip() or "reg_board"
         self._crawler = GnuBoardCrawler(
             base_url=url,
             save_dir=save_dir,
             log_fn=self._log,
             progress_fn=self._set_prog,
+            prefix=prefix,
         )
-        # bo_table 접두사 주입
-        self._crawler._probe_prefix = self.prefix_var.get().strip() or "reg_board"
 
         self._thread = threading.Thread(target=self._run_thread, daemon=True)
         self._thread.start()
