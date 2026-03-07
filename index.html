@@ -73,22 +73,18 @@
     font-weight: 700;
   }
 
-  .header-search-form {
-    position: relative; width: 328px; flex-shrink: 0;
-  }
+  .header-search-form { position: relative; width: 240px; flex-shrink: 0; }
   .header-search-icon {
-    position: absolute; right: 16px; top: 50%; transform: translateY(-50%);
-    width: 20px; height: 20px; color: #58616A; pointer-events: none;
+    position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+    width: 16px; height: 16px; color: #9ca3af; pointer-events: none;
   }
   .header-search-input {
-    width: 100%; height: 48px;
-    border: 1px solid var(--krds-light-color-border-gray-dark);
-    border-radius: 6px;
-    padding: 0 48px 0 16px; font-size: 1.0625rem; font-family: inherit;
-    background: #fff; color: var(--ink); outline: none;
-    transition: border-color 0.15s;
+    width: 100%; border: none;
+    border-bottom: 1px solid var(--krds-light-color-border-gray-light);
+    padding: 6px 4px 6px 22px; font-size: 0.88rem; font-family: inherit;
+    background: transparent; color: var(--ink); outline: none; transition: border-color 0.15s;
   }
-  .header-search-input:focus { border-color: var(--krds-light-color-border-secondary); }
+  .header-search-input:focus { border-bottom-color: var(--krds-light-color-border-secondary); }
   .header-search-input::placeholder { color: var(--krds-light-color-text-disabled); }
 
   /* ── 페이지 본문 ── */
@@ -257,12 +253,17 @@
 
   /* ── 관리자 UI ── */
   .admin-btn {
-    position: fixed; bottom: 28px; right: 28px;
-    background: var(--muted); color: var(--ink-soft); border: 1px solid var(--border);
-    border-radius: 6px; padding: 7px 14px; font-size: 0.78rem; font-weight: 600;
+    background: transparent;
+    color: var(--krds-light-color-text-disabled);
+    border: 1px solid var(--krds-light-color-border-gray-light);
+    border-radius: 6px; padding: 5px 12px; font-size: 0.8rem; font-weight: 500;
     font-family: inherit; cursor: pointer; transition: all 0.15s;
   }
-  .admin-btn:hover { background: var(--navy); color: #fff; border-color: var(--navy); }
+  .admin-btn:hover {
+    background: var(--krds-light-color-button-tertiary-fill-hover);
+    color: var(--krds-light-color-text-secondary);
+    border-color: var(--krds-light-color-border-secondary);
+  }
 
   .modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);
@@ -307,10 +308,12 @@
   .modal-msg.err { color: var(--danger); }
 
   .site-footer {
-    margin-top: 48px; padding: 20px; background: #E6E8EA;
-    border-top: 1px solid #E6E8EA; text-align: center;
+    margin-top: 48px; padding: 16px 32px; background: #E6E8EA;
+    border-top: 1px solid #E6E8EA;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
     font-size: 0.9375rem; color: #464C53; line-height: 1.5; font-weight: 400;
   }
+  .site-footer-text { text-align: center; flex: 1; }
   .art-body table { border-collapse: collapse; margin: 10px 0; font-size: 0.85rem; }
   .art-body th, .art-body td { border: 1px solid #d1d5db; padding: 3px 8px; text-align: center; }
   .art-body th { background: #f3f4f6; font-weight: 600; }
@@ -328,7 +331,7 @@
 <header class="site-header">
   <div class="site-header-inner">
     <a href="./" class="site-logo">
-      <img src="https://www.bufs.ac.kr/data/logo/top_logo_w.png" alt="부산외국어대학교 로고">
+      <img src="https://github.com/DYK1323/bufs_regulation/blob/%EB%94%94%EC%9E%90%EC%9D%B8-%EA%B0%9C%EC%84%A0/BUFS_Block_CMYK.jpg?raw=true" alt="부산외국어대학교 로고">
       부산외국어대학교 규정관리시스템
     </a>
     <nav class="site-nav">
@@ -340,8 +343,8 @@
       <a href="category.html?cat=6">기타</a>
     </nav>
     <form class="header-search-form" onsubmit="event.preventDefault(); goSearch(document.getElementById('kwHeader').value);">
-      <input id="kwHeader" class="header-search-input" type="text" placeholder="검색어를 입력해주세요." autocomplete="off">
       <svg class="header-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input id="kwHeader" class="header-search-input" type="text" placeholder="규정 검색..." autocomplete="off">
     </form>
   </div>
 </header>
@@ -377,12 +380,12 @@
 </div><!-- /.page-wrap -->
 
 <footer class="site-footer">
-  46234 부산광역시 금정구 금샘로485번길 65 &nbsp; 대표전화 : 051.509.5000 &nbsp; FAX : 051.509.5005<br>
-  COPYRIGHT© 2008 BUSAN UNIVERSITY OF FOREIGN STUDIES. ALL RIGHTS RESERVED.
+  <div class="site-footer-text">
+    46234 부산광역시 금정구 금샘로485번길 65 &nbsp; 대표전화 : 051.509.5000 &nbsp; FAX : 051.509.5005<br>
+    COPYRIGHT© 2008 BUSAN UNIVERSITY OF FOREIGN STUDIES. ALL RIGHTS RESERVED.
+  </div>
+  <button class="admin-btn" onclick="openAdminModal()">⚙ 관리자</button>
 </footer>
-
-<!-- 관리자 버튼 -->
-<button class="admin-btn" onclick="openAdminModal()">⚙ 관리자</button>
 
 <!-- 관리자 모달 -->
 <div class="modal-overlay" id="adminModal">

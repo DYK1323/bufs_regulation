@@ -34,25 +34,25 @@
   .site-header {
     position: sticky; top: 0; z-index: 50;
     background: #fff; border-bottom: 1px solid var(--navy);
-    padding: 0 32px;
+    padding: 32px 40px 24px;
   }
   .site-header-inner {
-    max-width: 1280px; margin: 0 auto;
+    max-width: 1360px; margin: 0 auto;
     display: flex; align-items: center; justify-content: space-between;
-    gap: 24px; height: 64px;
+    gap: 32px;
   }
   .site-logo {
-    display: flex; align-items: center; gap: 12px;
-    font-size: 1rem; font-weight: 700; color: #404040;
+    display: flex; align-items: center; gap: 16px;
+    font-size: 1.5rem; font-weight: 700; color: #1E2124;
     text-decoration: none; white-space: nowrap; flex-shrink: 0;
   }
-  .site-logo img { height: 1.5em; width: auto; }
-  .site-nav { display: flex; gap: 4px; align-items: center; }
+  .site-logo img { height: 36px; width: auto; }
+  .site-nav { display: flex; gap: 4px; align-items: center; flex: 1; justify-content: center; padding: 0 40px; }
   .site-nav a {
-    font-size: 0.9rem; font-weight: 700;
+    font-size: 1.0625rem; font-weight: 700;
     color: var(--krds-light-color-text-subtle);
     text-decoration: none; white-space: nowrap;
-    padding: 6px 12px; border-radius: 6px;
+    padding: 8px 12px; border-radius: 6px;
     transition: background 0.15s, color 0.15s;
   }
   .site-nav a:hover {
@@ -61,7 +61,7 @@
   }
   .site-nav a.active {
     color: var(--krds-light-color-text-secondary);
-    background: var(--krds-light-color-action-secondary-selected);
+    background: var(--krds-light-color-action-secondary-pressed);
     font-weight: 700;
   }
   .header-search-form { position: relative; width: 240px; flex-shrink: 0; }
@@ -79,79 +79,84 @@
   .header-search-input::placeholder { color: var(--krds-light-color-text-disabled); }
 
   /* ── 본문 레이아웃 ── */
-  .main-wrap { max-width: 1280px; margin: 0 auto; padding: 48px 32px 100px; }
+  .main-wrap { max-width: 1360px; margin: 0 auto; padding: 24px 40px 60px; }
 
-  /* ── 페이지 타이틀 ── */
-  .page-title-block { text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid var(--border); }
-  .page-title { font-size: 1.875rem; font-weight: 700; color: var(--ink); font-family: "Noto Sans KR", sans-serif; margin-bottom: 4px; }
-  .page-subtitle { font-size: 0.9rem; color: var(--ink-muted); }
+  /* ── 페이지 타이틀 (hero) ── */
+  .page-title-block { text-align: center; padding: 24px 0; margin-bottom: 24px; }
+  .page-title {
+    font-size: 2.5rem; font-weight: 700; line-height: 1.5; letter-spacing: 0.0625rem;
+    color: var(--krds-color-light-secondary-70); margin-bottom: 4px;
+  }
+  .page-subtitle { font-size: 1.1875rem; font-weight: 400; color: #000; line-height: 1.5; }
 
-  /* ── 서브탭 (학사규정) ── KRDS line tab style ── */
+  /* ── 서브탭 ── KRDS main_menu_open_title style ── */
   .sub-tabs {
     display: flex; gap: 0;
-    border-bottom: 1px solid var(--krds-light-color-border-gray);
     margin-bottom: 24px; overflow-x: auto;
   }
   .sub-tab {
-    position: relative;
-    padding: 10px 20px; font-size: 0.9375rem; font-weight: 700;
-    color: var(--krds-light-color-text-subtle);
-    cursor: pointer; white-space: nowrap; background: none; border: none;
-    margin-bottom: -1px; font-family: inherit;
-    transition: color 0.15s, background 0.15s;
-    border-radius: 6px 6px 0 0;
-  }
-  .sub-tab::after {
-    content: ''; position: absolute; bottom: -1px; left: 0; right: 0;
-    height: 2px; background: transparent;
-    transition: background 0.15s;
+    min-width: 157px;
+    padding: 4px 8px 12px;
+    font-size: 1.1875rem; font-weight: 700;
+    color: var(--krds-light-color-text-basic);
+    cursor: pointer; white-space: nowrap; background: none;
+    border: none; border-bottom: 1px solid var(--krds-light-color-divider-gray);
+    font-family: inherit; text-align: center;
+    transition: background 0.15s, color 0.15s;
   }
   .sub-tab:hover {
     color: var(--krds-light-color-text-secondary);
     background: var(--krds-light-color-action-secondary-hover);
   }
   .sub-tab.active {
+    background: var(--krds-light-color-action-secondary-pressed);
     color: var(--krds-light-color-text-secondary);
-    font-weight: 700;
-  }
-  .sub-tab.active::after {
-    background: var(--krds-light-color-action-secondary-active);
+    border-bottom-color: var(--krds-light-color-divider-gray);
   }
 
   /* ── 규정 테이블 ── */
-  .reg-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-  .reg-table thead tr { border-bottom: 1px solid var(--border); }
-  .reg-table thead th {
-    padding: 14px 24px; text-align: left;
-    font-weight: 700; font-size: 0.875rem; color: var(--ink); white-space: nowrap;
+  .reg-table { width: 100%; border-collapse: collapse; }
+  .reg-table thead tr {
+    background: var(--krds-light-color-surface-secondary-subtler);
+    border-bottom: 1px solid var(--krds-light-color-border-secondary-light);
   }
+  .reg-table thead th {
+    padding: 8px 16px; font-weight: 700; font-size: 0.9375rem;
+    color: var(--krds-light-color-text-bolder); white-space: nowrap;
+  }
+  .reg-table thead th:first-child { padding-left: 36px; text-align: left; }
+  .reg-table thead th.col-center { text-align: center; width: 215px; }
+  .reg-table thead th.col-status { text-align: center; width: 80px; }
   .reg-table tbody tr {
-    border-bottom: 1px solid var(--border);
+    border-bottom: 1px solid var(--krds-light-color-divider-gray-light);
     cursor: pointer; transition: background 0.1s;
   }
-  .reg-table tbody tr:hover { background: rgba(0,0,0,0.025); }
-  .reg-table tbody td { padding: 14px 24px; vertical-align: middle; }
-  .td-name { display: flex; align-items: center; gap: 10px; }
-  .td-name svg { width: 16px; height: 16px; color: var(--ink-muted); flex-shrink: 0; }
-  .td-name span { font-size: 0.9rem; color: var(--ink); }
-  .td-name span:hover { color: var(--navy); }
-  .td-date { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; color: var(--ink-muted); }
-  .td-date svg { width: 14px; height: 14px; }
-  .td-dept { font-size: 0.85rem; color: var(--ink-muted); }
-  .td-status { white-space: nowrap; }
-  .badge { display: inline-block; padding: 2px 10px; border-radius: 9999px; font-size: 0.72rem; font-weight: 700; }
-  .badge-active   { background: #d1fae5; color: #065f46; }
-  .badge-inactive { background: #f3f4f6; color: #6b7280; }
+  .reg-table tbody tr:hover { background: var(--krds-light-color-surface-secondary-subtler); }
+  .reg-table tbody td {
+    padding: 12px 16px; vertical-align: middle;
+    font-size: 1.0625rem; color: var(--krds-light-color-text-subtle);
+  }
+  .reg-table tbody td:first-child { padding-left: 36px; }
+  .td-center { text-align: center; }
+  .td-status { text-align: center; white-space: nowrap; }
+  .badge { display: inline-block; padding: 2px 10px; border-radius: 4px; font-size: 0.8125rem; font-weight: 700; }
+  .badge-active   { background: var(--krds-light-color-surface-success-subtler); color: var(--krds-color-light-success-60); }
+  .badge-inactive { background: var(--krds-light-color-surface-gray-subtle); color: var(--krds-light-color-text-disabled); }
+  .badge-new      { background: var(--krds-light-color-surface-primary-subtler); color: var(--krds-color-light-primary-60); }
 
   .no-result { text-align: center; padding: 60px 0; color: var(--ink-muted); font-size: 0.9rem; }
 
-  /* ── 돌아가기 버튼 ── KRDS tertiary style ── */
+  /* ── 푸터 ── */
+  .site-footer {
+    padding: 20px 40px; background: var(--krds-light-color-surface-gray-subtle);
+    border-top: 1px solid var(--krds-light-color-surface-gray-subtle);
+    display: flex; align-items: center; justify-content: flex-end;
+  }
   .admin-btn {
-    position: fixed; bottom: 28px; right: 28px;
-    background: var(--krds-light-color-button-tertiary-fill);
-    color: var(--krds-light-color-text-basic);
-    border: 1px solid var(--krds-light-color-button-tertiary-border);
-    border-radius: 6px; padding: 8px 16px; font-size: 0.875rem; font-weight: 600;
+    background: transparent;
+    color: var(--krds-light-color-text-disabled);
+    border: 1px solid var(--krds-light-color-border-gray-light);
+    border-radius: 6px; padding: 5px 12px; font-size: 0.8rem; font-weight: 500;
     font-family: inherit; cursor: pointer; transition: all 0.15s;
   }
   .admin-btn:hover {
@@ -173,7 +178,7 @@
 <header class="site-header">
   <div class="site-header-inner">
     <a href="./" class="site-logo">
-      <img src="https://www.bufs.ac.kr/data/logo/top_logo_w.png" alt="부산외국어대학교 로고">
+      <img src="https://github.com/DYK1323/bufs_regulation/blob/%EB%94%94%EC%9E%90%EC%9D%B8-%EA%B0%9C%EC%84%A0/BUFS_Block_CMYK.jpg?raw=true" alt="부산외국어대학교 로고">
       부산외국어대학교 규정관리시스템
     </a>
     <nav class="site-nav" id="siteNav">
@@ -201,7 +206,9 @@
   <div id="regTableWrap"></div>
 </div>
 
-<button class="admin-btn" onclick="location.href='./'">← 검색으로 돌아가기</button>
+<footer class="site-footer">
+  <button class="admin-btn" onclick="location.href='./'">← 검색으로 돌아가기</button>
+</footer>
 
 <script>
 const CAT_LABELS = { "1":"법인", "2":"학칙", "3":"위원회", "4":"학사규정", "5":"부속기관", "6":"기타" };
@@ -303,17 +310,19 @@ function renderTable(list) {
     const nameEsc = r.regName.replace(/\\/g,"\\\\").replace(/'/g,"\\'");
     const statusBadge = r.status === "폐지"
       ? '<span class="badge badge-inactive">' + escHtml(r.status) + '</span>'
+      : r.status === "신설"
+      ? '<span class="badge badge-new">' + escHtml(r.status) + '</span>'
       : (r.status ? '<span class="badge badge-active">' + escHtml(r.status) + '</span>' : '');
     return '<tr onclick="openReg(\'' + nameEsc + '\')" title="' + escHtml(r.regName) + '">'
-      + '<td><div class="td-name">' + fileIcon + '<span>' + escHtml(r.regName) + '</span></div></td>'
-      + '<td><div class="td-date">' + calIcon + escHtml(r.revisedDate || "") + '</div></td>'
-      + '<td class="td-dept">' + escHtml(r.dept || "") + '</td>'
+      + '<td>' + escHtml(r.regName) + '</td>'
+      + '<td class="td-center">' + escHtml(r.dept || "") + '</td>'
+      + '<td class="td-center">' + escHtml(r.revisedDate || "") + '</td>'
       + '<td class="td-status">' + statusBadge + '</td>'
       + '</tr>';
   }).join("");
 
   wrap.innerHTML = '<table class="reg-table">'
-    + '<thead><tr><th>규정명</th><th>최근개정일</th><th>담당부서</th><th>상태</th></tr></thead>'
+    + '<thead><tr><th>규정명</th><th class="col-center">담당부서</th><th class="col-center">개정일</th><th class="col-status">상태</th></tr></thead>'
     + '<tbody>' + rows + '</tbody></table>';
 }
 
