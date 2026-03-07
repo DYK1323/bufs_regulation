@@ -82,6 +82,7 @@
 
   /* ── 본문 레이아웃 ── */
   .main-wrap { width: 100%; padding: 24px 40px 60px; flex: 1; }
+  .main-wrap-inner { max-width: 1360px; margin: 0 auto; }
 
   /* ── 페이지 타이틀 (hero) ── */
   .page-title-block { text-align: center; padding: 24px 0; margin-bottom: 24px; }
@@ -245,13 +246,15 @@
 
 <!-- 본문 -->
 <div class="main-wrap">
+<div class="main-wrap-inner">
   <div class="page-title-block">
     <div class="page-title" id="pageTitle">규정 목록</div>
     <div class="page-subtitle" id="pageSubtitle"></div>
   </div>
   <div id="subTabs"></div>
   <div id="regTableWrap"></div>
-</div>
+</div><!-- /.main-wrap-inner -->
+</div><!-- /.main-wrap -->
 
 <footer class="site-footer">
   <div class="site-footer-text">
