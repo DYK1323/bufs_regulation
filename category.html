@@ -24,10 +24,12 @@
     --success:   var(--krds-color-light-success-50);
     --danger:    var(--krds-color-light-danger-50);
   }
-  html, body {
+  html { height: 100%; }
+  body {
     min-height: 100%; background: var(--paper); color: var(--ink);
     font-family: "Pretendard Variable", "Noto Sans KR", -apple-system, sans-serif;
     font-size: 16px; line-height: 1.6;
+    display: flex; flex-direction: column;
   }
 
   /* ── 헤더 ── */
@@ -79,7 +81,7 @@
   .header-search-input::placeholder { color: var(--krds-light-color-text-disabled); }
 
   /* ── 본문 레이아웃 ── */
-  .main-wrap { max-width: 1360px; margin: 0 auto; padding: 24px 40px 60px; }
+  .main-wrap { max-width: 1360px; width: 100%; margin: 0 auto; padding: 24px 40px 60px; flex: 1; }
 
   /* ── 페이지 타이틀 (hero) ── */
   .page-title-block { text-align: center; padding: 24px 0; margin-bottom: 24px; }
@@ -148,22 +150,67 @@
 
   /* ── 푸터 ── */
   .site-footer {
-    padding: 20px 40px; background: var(--krds-light-color-surface-gray-subtle);
+    padding: 16px 40px; background: var(--krds-light-color-surface-gray-subtle);
     border-top: 1px solid var(--krds-light-color-surface-gray-subtle);
-    display: flex; align-items: center; justify-content: flex-end;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    font-size: 0.9375rem; color: #464C53; line-height: 1.5; font-weight: 400;
   }
+  .site-footer-text { text-align: center; flex: 1; }
   .admin-btn {
     background: transparent;
     color: var(--krds-light-color-text-disabled);
     border: 1px solid var(--krds-light-color-border-gray-light);
     border-radius: 6px; padding: 5px 12px; font-size: 0.8rem; font-weight: 500;
-    font-family: inherit; cursor: pointer; transition: all 0.15s;
+    font-family: inherit; cursor: pointer; transition: all 0.15s; white-space: nowrap; flex-shrink: 0;
   }
   .admin-btn:hover {
     background: var(--krds-light-color-button-tertiary-fill-hover);
     color: var(--krds-light-color-text-secondary);
     border-color: var(--krds-light-color-border-secondary);
   }
+
+  /* ── 관리자 모달 ── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.45); backdrop-filter: blur(4px);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+  }
+  .modal-overlay.show { opacity: 1; pointer-events: all; }
+  .modal {
+    background: #fff; padding: 32px 36px; width: 340px; border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12); border: 1px solid var(--border);
+  }
+  .modal h3 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; color: var(--ink); text-align: center; }
+  .modal p { font-size: 0.8rem; color: var(--ink-muted); margin-bottom: 20px; line-height: 1.6; text-align: center; }
+  .modal input[type="password"] {
+    width: 100%; border: 1px solid var(--krds-light-color-border-gray); border-radius: 6px;
+    padding: 10px 12px; font-size: 0.88rem; font-family: inherit;
+    outline: none; margin-bottom: 12px; transition: border-color 0.15s;
+  }
+  .modal input[type="password"]:focus { border-color: var(--krds-light-color-border-secondary); }
+  .modal-btns { display: flex; gap: 8px; flex-direction: column; }
+  .modal-confirm {
+    width: 100%;
+    background: var(--krds-light-color-button-primary-fill);
+    color: var(--krds-light-color-text-inverse-static);
+    border-radius: 6px; border: none; padding: 10px;
+    font-family: inherit; font-weight: 600; font-size: 0.85rem;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .modal-confirm:hover { background: var(--krds-light-color-button-primary-fill-hover); }
+  .modal-confirm:disabled { background: var(--krds-light-color-button-disabled-fill); color: var(--krds-light-color-text-disabled-on); cursor: not-allowed; }
+  .modal-cancel {
+    width: 100%; background: transparent;
+    color: var(--krds-light-color-text-subtle);
+    border-radius: 6px;
+    border: 1px solid var(--krds-light-color-button-tertiary-border);
+    padding: 10px; font-family: inherit; font-weight: 600;
+    font-size: 0.85rem; cursor: pointer; transition: background 0.15s;
+  }
+  .modal-cancel:hover { background: var(--krds-light-color-button-tertiary-fill-hover); color: var(--ink); }
+  .modal-msg { font-size: 0.78rem; margin-top: 10px; min-height: 18px; font-weight: 500; text-align: center; }
+  .modal-msg.ok  { color: var(--success); }
+  .modal-msg.err { color: var(--danger); }
 
   @media (max-width: 680px) {
     .site-nav, .header-search-form { display: none; }
@@ -207,8 +254,27 @@
 </div>
 
 <footer class="site-footer">
-  <button class="admin-btn" onclick="location.href='./'">← 검색으로 돌아가기</button>
+  <div class="site-footer-text">
+    46234 부산광역시 금정구 금샘로485번길 65 &nbsp; 대표전화 : 051.509.5000 &nbsp; FAX : 051.509.5005<br>
+    COPYRIGHT© 2008 BUSAN UNIVERSITY OF FOREIGN STUDIES. ALL RIGHTS RESERVED.
+  </div>
+  <button class="admin-btn" onclick="openAdminModal()">⚙ 관리자</button>
 </footer>
+
+<!-- 관리자 모달 -->
+<div class="modal-overlay" id="adminModal">
+  <div class="modal">
+    <h3>관리자</h3>
+    <p>스프레드시트 수정 후 캐시를 초기화하면<br>최신 데이터가 반영됩니다.</p>
+    <input type="password" id="adminPw" placeholder="관리자 비밀번호"
+           onkeydown="if(event.key==='Enter') confirmClear()">
+    <div class="modal-btns">
+      <button class="modal-confirm" id="confirmBtn" onclick="confirmClear()">캐시 초기화</button>
+      <button class="modal-cancel" onclick="closeAdminModal()">취소</button>
+    </div>
+    <div class="modal-msg" id="modalMsg"></div>
+  </div>
+</div>
 
 <script>
 const CAT_LABELS = { "1":"법인", "2":"학칙", "3":"위원회", "4":"학사규정", "5":"부속기관", "6":"기타" };
@@ -372,6 +438,48 @@ function openReg(regName) {
 }
 
 init();
+
+function openAdminModal() {
+  document.getElementById("adminPw").value = "";
+  document.getElementById("modalMsg").textContent = "";
+  document.getElementById("modalMsg").className = "modal-msg";
+  document.getElementById("confirmBtn").disabled = false;
+  document.getElementById("adminModal").classList.add("show");
+  setTimeout(() => document.getElementById("adminPw").focus(), 100);
+}
+
+function closeAdminModal() {
+  document.getElementById("adminModal").classList.remove("show");
+}
+
+function confirmClear() {
+  const pw  = document.getElementById("adminPw").value;
+  const btn = document.getElementById("confirmBtn");
+  const msg = document.getElementById("modalMsg");
+  if (!pw) { msg.textContent = "비밀번호를 입력해주세요."; msg.className = "modal-msg err"; return; }
+  btn.disabled = true;
+  msg.textContent = "초기화 중…";
+  msg.className = "modal-msg";
+  fetch(SCRIPT_URL + "?action=clearCache&pw=" + encodeURIComponent(pw))
+    .then(r => r.json())
+    .then(result => {
+      btn.disabled = false;
+      msg.textContent = result.message;
+      msg.className = "modal-msg " + (result.success ? "ok" : "err");
+      if (result.success) {
+        setTimeout(function() {
+          closeAdminModal();
+          try { localStorage.removeItem("regList"); sessionStorage.removeItem("searchData"); } catch(e) {}
+          location.reload();
+        }, 1200);
+      }
+    })
+    .catch(err => {
+      btn.disabled = false;
+      msg.textContent = "오류: " + err.message;
+      msg.className = "modal-msg err";
+    });
+}
 </script>
 </body>
 </html>
