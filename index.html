@@ -27,13 +27,15 @@
     --success:   var(--krds-color-light-success-50);    /* #228738 */
     --danger:    var(--krds-color-light-danger-50);     /* #DE3412 */
   }
-  html, body {
+  html { height: 100%; }
+  body {
     min-height: 100%;
     background: var(--paper);
     color: var(--ink);
     font-family: "Pretendard Variable", "Noto Sans KR", -apple-system, sans-serif;
     font-size: 16px;
     line-height: 1.6;
+    display: flex; flex-direction: column;
   }
 
   /* ── 헤더 ── */
@@ -90,7 +92,7 @@
   .header-search-input::placeholder { color: var(--krds-light-color-text-disabled); }
 
   /* ── 페이지 본문 ── */
-  .page-wrap { max-width: 1360px; margin: 0 auto; padding: 0 40px; }
+  .page-wrap { width: 100%; padding: 0 40px; flex: 1; }
 
   /* 초기 로딩 오버레이 */
   .init-overlay {

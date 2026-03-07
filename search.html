@@ -25,41 +25,44 @@
     --success:   var(--krds-color-light-success-50);
     --danger:    var(--krds-color-light-danger-50);
   }
-  html, body {
+  html { height: 100%; }
+  body {
     min-height: 100%;
     background: var(--paper);
     color: var(--ink);
     font-family: "Pretendard Variable", "Noto Sans KR", -apple-system, sans-serif;
     font-size: 16px;
     line-height: 1.6;
+    display: flex; flex-direction: column;
   }
 
   /* ── 헤더 ── */
   .site-header {
     position: sticky; top: 0; z-index: 50;
     background: #fff; border-bottom: 1px solid var(--navy);
-    padding: 0 32px;
+    padding: 32px 40px 24px;
   }
   .site-header-inner {
-    max-width: 1280px; margin: 0 auto;
+    max-width: 1360px; margin: 0 auto;
     display: flex; align-items: center; justify-content: space-between;
-    gap: 24px; height: 64px;
+    gap: 32px;
   }
   .site-logo {
-    display: flex; align-items: center; gap: 12px;
-    font-size: 1rem; font-weight: 700; color: #404040;
+    display: flex; align-items: center; gap: 16px;
+    font-size: 1.5rem; font-weight: 700; color: #1E2124;
     text-decoration: none; white-space: nowrap; flex-shrink: 0;
   }
-  .site-logo img { height: 1.5em; width: auto; }
+  .site-logo img { height: 36px; width: auto; }
 
   .site-nav {
     display: flex; gap: 4px; align-items: center;
+    flex: 1; justify-content: center; padding: 0 40px;
   }
   .site-nav a {
-    font-size: 0.9rem; font-weight: 700;
+    font-size: 1.0625rem; font-weight: 700;
     color: var(--krds-light-color-text-subtle);
     text-decoration: none; white-space: nowrap;
-    padding: 6px 12px; border-radius: 6px;
+    padding: 8px 12px; border-radius: 6px;
     transition: background 0.15s, color 0.15s;
   }
   .site-nav a:hover {
@@ -68,7 +71,7 @@
   }
   .site-nav a.active {
     color: var(--krds-light-color-text-secondary);
-    background: var(--krds-light-color-action-secondary-selected);
+    background: var(--krds-light-color-action-secondary-pressed);
     font-weight: 700;
   }
 
@@ -90,7 +93,7 @@
   .header-search-input::placeholder { color: var(--krds-light-color-text-disabled); }
 
   /* ── 페이지 본문 ── */
-  .page-wrap { max-width: 1280px; margin: 0 auto; padding: 0 32px 80px; }
+  .page-wrap { width: 100%; padding: 0 40px 60px; flex: 1; }
 
   /* 초기 로딩 오버레이 */
   .init-overlay {
@@ -271,10 +274,12 @@
   .modal-msg.err { color: var(--danger); }
 
   .site-footer {
-    margin-top: 48px; padding: 12px 0; border-top: 1px solid var(--border);
+    padding: 16px 40px; background: var(--krds-light-color-surface-gray-subtle);
+    border-top: 1px solid var(--krds-light-color-surface-gray-subtle);
     display: flex; align-items: center; justify-content: space-between; gap: 16px;
-    font-size: 0.75rem; color: var(--ink-muted); font-weight: 400;
+    font-size: 0.9375rem; color: #464C53; line-height: 1.5; font-weight: 400;
   }
+  .site-footer-text { text-align: center; flex: 1; }
   .art-body table { border-collapse: collapse; margin: 10px 0; font-size: 0.85rem; }
   .art-body th, .art-body td { border: 1px solid #d1d5db; padding: 3px 8px; text-align: center; }
   .art-body th { background: #f3f4f6; font-weight: 600; }
@@ -326,11 +331,15 @@
   <div class="status-bar" id="statusBar"></div>
   <div id="results"></div>
 
-  <footer class="site-footer">
-    <span>규정 본문 기준 전문 검색 &nbsp;·&nbsp; record_status = active 행만 포함</span>
-    <button class="admin-btn" onclick="openAdminModal()">⚙ 관리자</button>
-  </footer>
-</div>
+  </div><!-- /.page-wrap -->
+
+<footer class="site-footer">
+  <div class="site-footer-text">
+    46234 부산광역시 금정구 금샘로485번길 65 &nbsp; 대표전화 : 051.509.5000 &nbsp; FAX : 051.509.5005<br>
+    COPYRIGHT© 2008 BUSAN UNIVERSITY OF FOREIGN STUDIES. ALL RIGHTS RESERVED.
+  </div>
+  <button class="admin-btn" onclick="openAdminModal()">⚙ 관리자</button>
+</footer>
 
 <!-- 관리자 모달 -->
 <div class="modal-overlay" id="adminModal">
